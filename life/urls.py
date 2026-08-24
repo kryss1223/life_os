@@ -31,6 +31,24 @@ urlpatterns = [
 
     path("areas/<int:pk>/edit/", views.life_area_edit, name="life_area_edit",),
 
-path("areas/<int:pk>/delete/", views.life_area_delete, name="life_area_delete",),
+    path("areas/<int:pk>/delete/", views.life_area_delete, name="life_area_delete",),
+
+    path(
+        "planning/",
+        views.planning,
+        name="planning",
+    ),
+
+    path(
+        "planning/allocation/<int:pk>/move/",
+        views.allocation_move,
+        name="allocation_move",
+    ),
+
+    path(
+        "planning/allocation/<int:pk>/remove/",
+        views.allocation_remove,
+        name="allocation_remove",
+    ),
 ]
 

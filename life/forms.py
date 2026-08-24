@@ -301,3 +301,12 @@ class WeeklyPlannerForm(forms.Form):
             }
         ),
     )
+    include_saturday = forms.BooleanField(
+        required=False,
+        label="Sábado",
+    )
+
+    include_sunday = forms.BooleanField(
+        required=False,
+        label="Domingo",
+    )

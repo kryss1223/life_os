@@ -26,7 +26,7 @@ Planning | Life OS
     </p>
 
 </header>
-{% if fixed_allocations %}
+{% if saved_schedule %}
 
 <section>
 
@@ -35,45 +35,117 @@ Planning | Life OS
             THIS WEEK
         </span>
 
-        <h2>Planificación actual</h2>
+        <h2>Mi semana</h2>
     </div>
 
-    <div class="plans">
 
-        {% for allocation in fixed_allocations %}
+    <div class="weekly-calendar">
 
-            <div class="plan">
+        {% for day in saved_schedule %}
 
-                <div>
-                    <h3>
-                        {{ allocation.task.name }}
-                    </h3>
+            <article class="weekly-day">
 
-                    <span class="plan-area">
-                        Deadline:
-                        {{ allocation.task.due_date|date:"d M" }}
-                    </span>
+                <header class="weekly-day-header">
+
+                    <div>
+                        <strong>
+                            {{ day.name }}
+                        </strong>
+
+                        <span>
+                            {{ day.date|date:"d M" }}
+                        </span>
+                    </div>
+
+                </header>
+
+
+                <div class="weekly-day-tasks">
+
+                    {% for allocation in day.allocations %}
+
+                        <div class="weekly-task saved-task">
+
+                        <div class="saved-task-info">
+
+                            <strong>
+                                {{ allocation.task.name }}
+                            </strong>
+
+                            <span>
+                                {{ allocation.planned_hours|floatformat:1 }}h
+                            </span>
+
+                        </div>
+
+
+                        <div class="allocation-actions">
+
+                            <form
+                                method="POST"
+                                action="{% url 'life:allocation_move' allocation.pk %}"
+                            >
+
+                                {% csrf_token %}
+
+                                <select
+                                    name="planned_date"
+                                    onchange="this.form.submit()"
+                                >
+
+                                    {% for target_day in saved_schedule %}
+
+                                        <option
+                                            value="{{ target_day.date|date:'Y-m-d' }}"
+
+                                            {% if target_day.date == allocation.planned_date %}
+                                                selected
+                                            {% endif %}
+                                        >
+                                            {{ target_day.name }}
+                                        </option>
+
+                                    {% endfor %}
+
+                                </select>
+
+                            </form>
+
+
+                            <form
+                                method="POST"
+                                action="{% url 'life:allocation_remove' allocation.pk %}"
+                            >
+
+                                {% csrf_token %}
+
+                                <button
+                                    type="submit"
+                                    class="allocation-remove"
+                                    title="Quitar de esta semana"
+                                >
+                                    ×
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
                 </div>
 
-                <div class="plan-progress">
-
-                    <strong>
-                        {{ allocation.planned_hours|floatformat:1 }}h
-                    </strong>
-
-                    <span>
-                        esta semana
-                    </span>
-
-                </div>
-
-            </div>
+            </article>
 
         {% endfor %}
 
     </div>
 
 </section>
+
+
 
 {% endif %}
 <section class="weekly-planner">
@@ -99,6 +171,32 @@ Planning | Life OS
                 {{ planner_form.available_hours.value|default:20 }}
             </span>h disponibles
         </strong>
+        <div class="planner-days">
+
+            <span>Días disponibles:</span>
+
+            <label>
+                {{ planner_form.include_saturday }}
+                Sábado
+            </label>
+
+            <label>
+                {{ planner_form.include_sunday }}
+                Domingo
+            </label>
+
+        </div>
+                <input
+            type="hidden"
+            name="include_saturday"
+            value="{% if planner_form.include_saturday.value %}on{% endif %}"
+        >
+
+        <input
+            type="hidden"
+            name="include_sunday"
+            value="{% if planner_form.include_sunday.value %}on{% endif %}"
+        >
 
         <button type="submit" class="button">
             Calcular mi semana
@@ -215,6 +313,78 @@ Planning | Life OS
         {% empty %}
 
             <p>No hay tareas pendientes con deadline.</p>
+
+        {% endfor %}
+
+    </div>
+        <div class="section-title weekly-calendar-title">
+        <span class="eyebrow">
+            WEEK DISTRIBUTION
+        </span>
+
+        <h2>
+            Propuesta de distribución
+        </h2>
+    </div>
+
+
+    <div class="weekly-calendar">
+
+        {% for day in planner_result.schedule %}
+
+            <article class="weekly-day">
+
+                <header class="weekly-day-header">
+
+                    <div>
+                        <strong>
+                            {{ day.name }}
+                        </strong>
+
+                        <span>
+                            {{ day.date|date:"d M" }}
+                        </span>
+                    </div>
+
+                    <small>
+                        {{ day.used_hours|floatformat:1 }}
+                        /
+                        {{ day.capacity|floatformat:1 }}h
+                    </small>
+
+                </header>
+
+
+                <div class="weekly-day-tasks">
+
+                    {% for item in day.tasks %}
+
+                        <a
+                            href="{% url 'life:task_detail' item.task.pk %}"
+                            class="weekly-task {{ item.urgency }}"
+                        >
+
+                            <span>
+                                {{ item.task.name }}
+                            </span>
+
+                            <strong>
+                                {{ item.hours|floatformat:1 }}h
+                            </strong>
+
+                        </a>
+
+                    {% empty %}
+
+                        <span class="weekly-free">
+                            Libre
+                        </span>
+
+                    {% endfor %}
+
+                </div>
+
+            </article>
 
         {% endfor %}
 

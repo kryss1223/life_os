@@ -836,15 +836,55 @@ def planning(request):
 
 
     fixed_allocations = (
-            WeeklyTaskAllocation.objects
-            .filter(
-                week=current_week,
-            )
-            .select_related("task")
-            .order_by("task__due_date")
-            if current_week
-            else []
+        WeeklyTaskAllocation.objects
+        .filter(
+            week=current_week,
+            planned_date__isnull=False,
         )
+        .select_related("task")
+        .order_by(
+            "planned_date",
+            "task__due_date",
+        )
+        if current_week
+        else WeeklyTaskAllocation.objects.none()
+    )
+    saved_schedule = []
+
+    if current_week:
+
+        monday = current_week.week_start
+
+        allocations_by_date = defaultdict(list)
+
+        for allocation in fixed_allocations:
+            allocations_by_date[
+                allocation.planned_date
+            ].append(allocation)
+
+        for index in range(7):
+
+            current_date = (
+                monday + timedelta(days=index)
+            )
+
+            saved_schedule.append({
+                "date": current_date,
+                "name": [
+                    "Lunes",
+                    "Martes",
+                    "Miércoles",
+                    "Jueves",
+                    "Viernes",
+                    "Sábado",
+                    "Domingo",
+                ][index],
+                "allocations":
+                    allocations_by_date.get(
+                        current_date,
+                        [],
+                    ),
+            })
 
 
     planner_form = WeeklyPlannerForm(
@@ -858,11 +898,16 @@ def planning(request):
             request.method == "POST"
             and planner_form.is_valid()
         ):
-
             available_hours = (
-                planner_form.cleaned_data[
-                    "available_hours"
-                ]
+                planner_form.cleaned_data["available_hours"]
+            )
+
+            include_saturday = (
+                planner_form.cleaned_data["include_saturday"]
+            )
+
+            include_sunday = (
+                planner_form.cleaned_data["include_sunday"]
             )
 
             planner_tasks = (
@@ -883,6 +928,8 @@ def planning(request):
             planner_result = build_weekly_plan(
                 planner_tasks,
                 available_hours,
+                include_saturday=include_saturday,
+                include_sunday=include_sunday,
             )
 
             action = request.POST.get("action")
@@ -904,30 +951,32 @@ def planning(request):
                 week.save()
 
                 # IDs que forman parte de esta planificación
-                planned_task_ids = []
+                with transaction.atomic():
 
-                for item in planner_result["tasks"]:
+                    # Sustituimos la planificación anterior
+                    # de esta semana por la nueva
+                    week.task_allocations.all().delete()
 
-                    task = item["task"]
+                    for day in planner_result["schedule"]:
 
-                    planned_task_ids.append(task.pk)
+                        for item in day["tasks"]:
 
-                    WeeklyTaskAllocation.objects.update_or_create(
-                        week=week,
-                        task=task,
-                        defaults={
-                            "planned_hours":
-                                item["weekly_hours_needed"]
-                        },
-                    )
-
-                # Quitamos asignaciones antiguas que
-                # ya no forman parte del cálculo actual
-                week.task_allocations.exclude(
-                    task_id__in=planned_task_ids
-                ).delete()
+                            WeeklyTaskAllocation.objects.create(
+                                week=week,
+                                task=item["task"],
+                                planned_date=day["date"],
+                                planned_hours=item["hours"],
+                            )
 
                 return redirect("life:planning")
+
+            include_saturday = planner_form.cleaned_data[
+                "include_saturday"
+            ]
+
+            include_sunday = planner_form.cleaned_data[
+                "include_sunday"
+            ]
 
     context = {
         "year": year,
@@ -951,6 +1000,8 @@ def planning(request):
 
         "current_week": current_week,
         "fixed_allocations": fixed_allocations,
+
+        "saved_schedule": saved_schedule,
     }
 
     return render(
@@ -958,3 +1009,78 @@ def planning(request):
         "life/planning.html",
         context,
     )
+
+@login_required
+def allocation_move(request, pk):
+
+    allocation = get_object_or_404(
+        WeeklyTaskAllocation,
+        pk=pk,
+        week__user=request.user,
+    )
+
+    if request.method != "POST":
+        return redirect("life:planning")
+
+    new_date_raw = request.POST.get("planned_date")
+
+    try:
+        new_date = date.fromisoformat(
+            new_date_raw
+        )
+    except (TypeError, ValueError):
+        return redirect("life:planning")
+
+    monday = allocation.week.week_start
+    sunday = monday + timedelta(days=6)
+
+    # Solo puede moverse dentro de esa semana
+    if not monday <= new_date <= sunday:
+        return redirect("life:planning")
+
+    # Si ya existe esa misma tarea ese día,
+    # sumamos las horas.
+    existing = (
+        WeeklyTaskAllocation.objects
+        .filter(
+            week=allocation.week,
+            task=allocation.task,
+            planned_date=new_date,
+        )
+        .exclude(pk=allocation.pk)
+        .first()
+    )
+
+    with transaction.atomic():
+
+        if existing:
+            existing.planned_hours += (
+                allocation.planned_hours
+            )
+            existing.save(
+                update_fields=["planned_hours"]
+            )
+
+            allocation.delete()
+
+        else:
+            allocation.planned_date = new_date
+            allocation.save(
+                update_fields=["planned_date"]
+            )
+
+    return redirect("life:planning")
+
+@login_required
+def allocation_remove(request, pk):
+
+    allocation = get_object_or_404(
+        WeeklyTaskAllocation,
+        pk=pk,
+        week__user=request.user,
+    )
+
+    if request.method == "POST":
+        allocation.delete()
+
+    return redirect("life:planning")
