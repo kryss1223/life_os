@@ -1,0 +1,491 @@
+{% extends "life/base.html" %}
+{% load static %}
+
+{% block title %}
+Planning | Life OS
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'life/css/planning.css' %}?v=1">
+{% endblock %}
+
+
+{% block content %}
+
+<header class="page-header">
+
+    <span class="eyebrow">
+        PLANNING
+    </span>
+
+    <h1>Planning</h1>
+
+    <p>
+        Visualiza tus compromisos y cómo quieres
+        repartir tus recursos.
+    </p>
+
+</header>
+
+
+<!-- ======================== -->
+<!-- ENERGÍA / PRIORIDADES -->
+<!-- ======================== -->
+
+<section>
+
+    <div class="section-title">
+        <h2>Distribución de tu vida</h2>
+    </div>
+
+
+    <div class="planning-charts">
+
+        <article class="planning-chart-card">
+
+            <div class="planning-chart-header">
+                <span class="eyebrow">
+                    PRIORIDAD
+                </span>
+
+                <h3>
+                    Lo que me importa
+                </h3>
+
+                <p>
+                    Peso relativo de cada área
+                    según su importancia.
+                </p>
+            </div>
+
+            <div class="chart-wrapper">
+                <canvas id="importanceChart"></canvas>
+            </div>
+
+        </article>
+
+
+        <article class="planning-chart-card">
+
+            <div class="planning-chart-header">
+                <span class="eyebrow">
+                    TIEMPO
+                </span>
+
+                <h3>
+                    Dónde quiero poner mi tiempo
+                </h3>
+
+                <p>
+                    Distribución de tus
+                    {{ total_target_hours|floatformat:1 }}h
+                    objetivo semanales.
+                </p>
+            </div>
+
+            <div class="chart-wrapper">
+                <canvas id="timeChart"></canvas>
+            </div>
+
+        </article>
+
+    </div>
+
+</section>
+<!-- ======================== -->
+<!-- DESAJUSTES -->
+<!-- ======================== -->
+
+<section>
+
+    <div class="section-title">
+        <span class="eyebrow">BALANCE</span>
+        <h2>Importancia vs tiempo deseado</h2>
+    </div>
+
+    {% if largest_mismatch %}
+
+        <div class="mismatch-summary">
+            <span>Mayor desajuste</span>
+
+            <strong>
+                {{ largest_mismatch.area.name }}
+            </strong>
+
+            <small>
+                {{ largest_mismatch.difference }} puntos
+            </small>
+        </div>
+
+    {% endif %}
+
+
+    <div class="balance-card">
+
+        {% for item in area_balance %}
+
+            <div class="balance-row">
+
+                <div class="balance-area">
+
+                    <strong>
+                        {{ item.area.name }}
+                    </strong>
+
+                    <span class="balance-status {{ item.status }}">
+                        {{ item.status_label }}
+                    </span>
+
+                </div>
+
+
+                <div class="balance-values">
+
+                    <div>
+                        <span>Importancia</span>
+                        <strong>
+                            {{ item.importance_share }}%
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Tiempo</span>
+                        <strong>
+                            {{ item.time_share }}%
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Diferencia</span>
+                        <strong>
+                            {% if item.difference > 0 %}+{% endif %}
+                            {{ item.difference }}%
+                        </strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+
+<!-- ======================== -->
+<!-- PRÓXIMOS DEADLINES -->
+<!-- ======================== -->
+
+<section>
+
+    <div class="section-title">
+        <span class="eyebrow">NEXT 30 DAYS</span>
+        <h2>Próximos deadlines</h2>
+    </div>
+
+
+    <div class="deadline-list">
+
+        {% for task in upcoming_deadlines %}
+
+            <a
+                href="{% url 'life:task_detail' task.pk %}"
+                class="deadline-row"
+            >
+
+                <div class="deadline-date">
+
+                    <strong>
+                        {{ task.due_date|date:"d" }}
+                    </strong>
+
+                    <span>
+                        {{ task.due_date|date:"M" }}
+                    </span>
+
+                </div>
+
+
+                <div class="deadline-info">
+
+                    <strong>
+                        {{ task.name }}
+                    </strong>
+
+                    <div class="deadline-plans">
+
+                        {% for plan in task.plans.all %}
+
+                            <span>
+                                {{ plan.life_area.name }}
+                                ·
+                                {{ plan.name }}
+                            </span>
+
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+
+
+                <span class="task-status">
+                    {{ task.get_status_display }}
+                </span>
+
+            </a>
+
+        {% empty %}
+
+            <div class="empty-state">
+                No tienes deadlines en los próximos 30 días.
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+<!-- ======================== -->
+<!-- CALENDARIO -->
+<!-- ======================== -->
+
+<section>
+
+    <div class="calendar-header">
+
+        <div>
+            <span class="eyebrow">
+                DEADLINES
+            </span>
+
+            <h2>
+                Calendario {{ year }}
+            </h2>
+        </div>
+
+
+        <div class="year-navigation">
+
+            <a
+                href="?year={{ previous_year }}"
+                class="button button-secondary"
+            >
+                ← {{ previous_year }}
+            </a>
+
+            <a
+                href="?year={{ next_year }}"
+                class="button button-secondary"
+            >
+                {{ next_year }} →
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <div class="year-calendar">
+
+        {% for month in months %}
+
+        <article class="month-card">
+
+            <h3>
+                {{ month.name }}
+            </h3>
+
+
+            <div class="weekdays">
+
+                <span>L</span>
+                <span>M</span>
+                <span>X</span>
+                <span>J</span>
+                <span>V</span>
+                <span>S</span>
+                <span>D</span>
+
+            </div>
+
+
+            <div class="month-grid">
+
+                {% for week in month.weeks %}
+
+                    {% for day in week %}
+
+                        {% if day %}
+
+                            <div
+                                class="
+                                    calendar-day
+                                    {% if day.tasks %}
+                                        has-tasks
+                                    {% endif %}
+                                "
+                            >
+
+                                <span class="day-number">
+                                    {{ day.day }}
+                                </span>
+
+
+                                {% for task in day.tasks %}
+
+                                    <a
+                                        href="{% url 'life:task_detail' task.pk %}"
+                                        class="calendar-task status-{{ task.status|lower }}"
+                                        title="{{ task.name }} — {{ task.get_status_display }}"
+                                    >
+                                        {{ task.name }}
+                                    </a>
+
+                                {% endfor %}
+
+                            </div>
+
+                        {% else %}
+
+                            <div class="calendar-day empty"></div>
+
+                        {% endif %}
+
+                    {% endfor %}
+
+                {% endfor %}
+
+            </div>
+
+        </article>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+
+<!-- Django → JS de forma segura -->
+
+{{ area_names|json_script:"area-names" }}
+{{ importance_values|json_script:"importance-values" }}
+{{ time_values|json_script:"time-values" }}
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+    const areaNames = JSON.parse(
+        document.getElementById(
+            "area-names"
+        ).textContent
+    );
+
+    const importanceValues = JSON.parse(
+        document.getElementById(
+            "importance-values"
+        ).textContent
+    );
+
+    const timeValues = JSON.parse(
+        document.getElementById(
+            "time-values"
+        ).textContent
+    );
+
+
+    const colors = [
+        "#9b8cff",
+        "#62b6cb",
+        "#f6bd60",
+        "#84a98c",
+        "#e5989b",
+        "#b8a1d9",
+        "#7db9b6",
+        "#d4a373"
+    ];
+
+
+    function createLifeChart(
+        canvasId,
+        values
+    ) {
+
+        new Chart(
+            document.getElementById(canvasId),
+            {
+                type: "doughnut",
+
+                data: {
+                    labels: areaNames,
+
+                    datasets: [{
+                        data: values,
+
+                        backgroundColor: colors,
+
+                        borderWidth: 0,
+                    }]
+                },
+
+                options: {
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    cutout: "68%",
+
+                    plugins: {
+
+                        legend: {
+                            position: "bottom",
+
+                            labels: {
+                                color: "#aaa",
+                                padding: 16,
+                                usePointStyle: true,
+                            }
+                        },
+
+                        tooltip: {
+                            callbacks: {
+
+                                label: function(context) {
+                                    return (
+                                        context.label +
+                                        ": " +
+                                        context.raw +
+                                        "%"
+                                    );
+                                }
+
+                            }
+                        }
+
+                    }
+                }
+            }
+        );
+
+    }
+
+
+    createLifeChart(
+        "importanceChart",
+        importanceValues
+    );
+
+    createLifeChart(
+        "timeChart",
+        timeValues
+    );
+
+</script>
+
+{% endblock %}

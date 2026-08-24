@@ -1,0 +1,105 @@
+{% extends "life/base.html" %}
+
+{% block title %}{{ area.name }} | Life OS{% endblock %}
+
+{% block content %}
+
+<header class="page-header">
+
+    <span class="eyebrow">LIFE AREA</span>
+
+    <h1>{{ area.name }}</h1>
+
+    <p>{{ area.description }}</p>
+
+</header>
+
+<div class="section-title section-title-row">
+
+
+    <a
+        href="{% url 'life:plan_create' %}"
+        class="button"
+    >
+        + Nuevo plan
+    </a>
+
+</div>
+
+<section>
+
+    <div class="section-title">
+        <h2>Planes</h2>
+    </div>
+
+    <div class="plans">
+
+        {% for plan in plans %}
+
+        <a
+            href="{% url 'life:plan_detail' plan.pk %}"
+            class="plan card-link"
+        >
+
+            <div>
+                <span class="plan-area">
+                    {{ plan.get_status_display }}
+                </span>
+
+                <h3>{{ plan.name }}</h3>
+            </div>
+
+            <strong>
+                {{ plan.progress }}%
+            </strong>
+
+        </a>
+
+        {% empty %}
+
+            <p>No hay planes todavía.</p>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+
+<section>
+
+    <div class="section-title">
+        <h2>Histórico semanal</h2>
+    </div>
+
+    <div class="table-card">
+
+        {% for snapshot in snapshots %}
+
+            <div class="data-row">
+
+                <span>
+                    {{ snapshot.week_start }}
+                </span>
+
+                <span>
+                    {{ snapshot.hours_spent }}h
+                </span>
+
+                <strong>
+                    {{ snapshot.satisfaction }}%
+                </strong>
+
+            </div>
+
+        {% empty %}
+
+            <p>No hay datos semanales todavía.</p>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+{% endblock %}

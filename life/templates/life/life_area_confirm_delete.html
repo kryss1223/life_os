@@ -1,0 +1,58 @@
+{% extends "life/base.html" %}
+
+{% block title %}
+Eliminar {{ area.name }} | Life OS
+{% endblock %}
+
+
+{% block content %}
+
+<header class="page-header">
+    <span class="eyebrow">DELETE LIFE AREA</span>
+
+    <h1>Eliminar {{ area.name }}</h1>
+
+    <p>
+        Esta acción eliminará el área,
+        sus planes y sus datos asociados.
+    </p>
+</header>
+
+
+<div class="form-container">
+
+    <h3>¿Seguro que quieres eliminar esta área?</h3>
+
+    <p class="delete-warning">
+        Los planes pertenecientes exclusivamente a
+        {{ area.name }} también desaparecerán.
+    </p>
+
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        <div class="form-actions">
+
+            <a
+                href="{% url 'life:life_area_detail' area.pk %}"
+                class="button button-secondary"
+            >
+                Cancelar
+            </a>
+
+            <button
+                type="submit"
+                class="button button-danger"
+            >
+                Sí, eliminar área
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

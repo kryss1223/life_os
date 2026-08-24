@@ -1,0 +1,68 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}Life OS{% endblock %}</title>
+
+    <!-- CSS GENERAL -->
+    <link rel="stylesheet" href="{% static 'life/css/style.css' %}?v=2">
+
+    <!-- CSS ESPECÍFICO DE CADA PÁGINA -->
+    {% block extra_css %}
+    {% endblock %}
+</head>
+<body>
+
+<div class="app">
+
+    <aside class="sidebar">
+        <div>
+            <h2 class="logo">LIFE_OS</h2>
+
+            <nav>
+
+                <a href="{% url 'life:dashboard' %}">
+                    Dashboard
+                </a>
+
+                <a href="{% url 'life:life_area_list' %}">
+                    Áreas
+                </a>
+                
+
+                <a href="{% url 'life:plan_list' %}">
+                    Planes
+                </a>
+
+                <a href="{% url 'life:task_list' %}">
+                    Tareas
+                </a>
+
+                <a href="{% url 'life:planning' %}">
+                    Planning
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-bottom">
+            {{ request.user.username }}
+        </div>
+    </aside>
+
+
+    <main class="content">
+
+        {% block content %}
+        {% endblock %}
+
+    </main>
+
+</div>
+
+</body>
+</html>

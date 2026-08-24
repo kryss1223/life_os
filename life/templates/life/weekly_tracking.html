@@ -1,0 +1,64 @@
+{% extends "life/base.html" %}
+
+{% block title %}Semanas | Life OS{% endblock %}
+
+{% block content %}
+
+<header class="page-header">
+
+    <span class="eyebrow">WEEKLY TRACKING</span>
+
+    <h1>Seguimiento semanal</h1>
+
+    <p>
+        Cómo estás ejecutando realmente tus planes.
+    </p>
+
+</header>
+
+
+<div class="table-card">
+
+    {% for week in tracking %}
+
+        <div class="data-row">
+
+            <div>
+                <strong>
+                    {{ week.plan.name }}
+                </strong>
+
+                <span>
+                    {{ week.plan.life_area.name }}
+                </span>
+            </div>
+
+            <span>
+                {{ week.week_start }}
+            </span>
+
+            <span>
+                {{ week.actual_hours }} /
+                {{ week.planned_hours }}h
+            </span>
+
+            <span>
+                {{ week.tasks_completed }} /
+                {{ week.tasks_total }}
+            </span>
+
+            <strong>
+                {{ week.consistency_score }}%
+            </strong>
+
+        </div>
+
+    {% empty %}
+
+        <p>No hay registros todavía.</p>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}

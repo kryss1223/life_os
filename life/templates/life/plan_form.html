@@ -1,0 +1,75 @@
+{% extends "life/base.html" %}
+
+{% block title %}Nuevo plan | Life OS{% endblock %}
+
+{% block content %}
+
+<header class="page-header">
+    {% if editing %}
+        <span class="eyebrow">EDIT PLAN</span>
+        <h1>Editar {{ plan.name }}</h1>
+    {% else %}
+        <span class="eyebrow">NEW PLAN</span>
+        <h1>Crear plan</h1>
+    {% endif %}
+
+    <p>
+        Define un objetivo dentro de una de tus áreas de vida.
+    </p>
+</header>
+
+
+<div class="form-container">
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        {% for field in form %}
+
+            <div class="form-group">
+
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+
+                {{ field }}
+
+                {% for error in field.errors %}
+                    <span class="form-error">
+                        {{ error }}
+                    </span>
+                {% endfor %}
+
+            </div>
+
+        {% endfor %}
+
+
+        <div class="form-actions">
+
+            <a
+                href="{% url 'life:plan_list' %}"
+                class="button button-secondary"
+            >
+                Cancelar
+            </a>
+
+           <button
+                type="submit"
+                class="button"
+            >
+                {% if editing %}
+                    Guardar cambios
+                {% else %}
+                    Crear plan
+                {% endif %}
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

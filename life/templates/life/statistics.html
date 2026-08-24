@@ -1,0 +1,88 @@
+{% extends "life/base.html" %}
+
+{% block title %}Estadísticas | Life OS{% endblock %}
+
+{% block content %}
+
+<header class="page-header">
+
+    <span class="eyebrow">ANALYTICS</span>
+
+    <h1>Estadísticas</h1>
+
+    <p>
+        Una primera lectura global de tus datos.
+    </p>
+
+</header>
+
+
+<div class="metric-grid">
+
+    <div class="metric-card">
+        <span>Áreas</span>
+        <strong>{{ area_count }}</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Satisfacción media</span>
+        <strong>
+            {{ average_satisfaction|floatformat:1 }}%
+        </strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Planes activos</span>
+        <strong>{{ active_plans }}</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Tareas completadas</span>
+        <strong>{{ completed_tasks }}</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Horas objetivo</span>
+        <strong>{{ weekly_hours_target }}h</strong>
+    </div>
+
+</div>
+
+
+<section>
+
+    <div class="section-title">
+        <h2>Últimos registros</h2>
+    </div>
+
+    <div class="table-card">
+
+        {% for snapshot in snapshots %}
+
+            <div class="data-row">
+
+                <strong>
+                    {{ snapshot.life_area.name }}
+                </strong>
+
+                <span>
+                    {{ snapshot.week_start }}
+                </span>
+
+                <span>
+                    {{ snapshot.hours_spent }}h
+                </span>
+
+                <strong>
+                    {{ snapshot.satisfaction }}%
+                </strong>
+
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+{% endblock %}

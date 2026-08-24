@@ -1,0 +1,64 @@
+{% extends "life/base.html" %}
+
+{% block title %}Tareas | Life OS{% endblock %}
+
+{% block content %}
+
+<header class="page-header">
+
+    <span class="eyebrow">TASKS</span>
+
+    <h1>Tareas</h1>
+
+    <p>
+        Acciones concretas que producen progreso.
+    </p>
+
+    <div class="section-title section-title-row">
+        <a 
+                    href="{% url 'life:task_create' %}"
+                    class="button"
+                >
+                    + Nueva Tárea
+                </a>
+
+    </div>
+</header>
+
+
+<div class="tasks">
+
+    {% for task in tasks %}
+
+        <a
+            href="{% url 'life:task_detail' task.pk %}"
+            class="task card-link"
+        >
+
+            <div>
+
+                <strong>
+                    {{ task.name }}
+                </strong>
+
+                {% for plan in task.plans.all %}
+
+                    <span>
+                        {{ plan.name }}
+                    </span>
+
+                {% endfor %}
+
+            </div>
+
+            <span class="task-status">
+                {{ task.get_status_display }}
+            </span>
+
+        </a>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}

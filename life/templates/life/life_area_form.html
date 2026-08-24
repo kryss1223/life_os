@@ -1,0 +1,85 @@
+{% extends "life/base.html" %}
+
+{% block title %}
+Nueva área | Life OS
+{% endblock %}
+
+
+{% block content %}
+
+<header class="page-header">
+
+    <div>
+        {% if editing %}
+            <span class="eyebrow">EDIT LIFE AREA</span>
+            <h1>Editar {{ area.name }}</h1>
+        {% else %}
+            <span class="eyebrow">NEW LIFE AREA</span>
+            <h1>Nueva área</h1>
+        {% endif %}
+
+        <p>
+            Define una parte importante de tu vida.
+        </p>
+    </div>
+
+</header>
+
+
+<div class="form-container">
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        {% for field in form %}
+
+            <div class="form-group">
+
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+
+                {{ field }}
+
+                {% if field.help_text %}
+                    <span class="help-text">
+                        {{ field.help_text }}
+                    </span>
+                {% endif %}
+
+                {% for error in field.errors %}
+                    <span class="form-error">
+                        {{ error }}
+                    </span>
+                {% endfor %}
+
+            </div>
+
+        {% endfor %}
+
+
+        <div class="form-actions">
+
+            <a
+                href="{% url 'life:dashboard' %}"
+                class="button button-secondary"
+            >
+                Cancelar
+            </a>
+
+            <button type="submit" class="button">
+                {% if editing %}
+                    Guardar cambios
+                {% else %}
+                    Crear área
+                {% endif %}
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

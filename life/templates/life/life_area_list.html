@@ -1,0 +1,78 @@
+{% extends "life/base.html" %}
+
+{% block title %}Áreas | Life OS{% endblock %}
+
+{% block content %}
+
+<header class="page-header">
+    <span class="eyebrow">LIFE AREAS</span>
+    <h1>Áreas de vida</h1>
+    <p>Las partes de tu vida que quieres seguir y mejorar.</p>
+    <a
+                    href="{% url 'life:life_area_create' %}"
+                    class="button"
+                >
+                    + Nueva Area
+                </a>
+</header>
+
+
+<div class="area-grid">
+
+    
+
+    {% for area in areas %}
+
+        <a
+            href="{% url 'life:life_area_detail' area.pk %}"
+            class="area-card card-link"
+        >
+
+            <div class="area-card-header">
+
+                <div>
+                    <h3>{{ area.name }}</h3>
+                    <span>
+                        Importancia {{ area.importance_weight }}%
+                    </span>
+                </div>
+
+                <strong>
+                    {{ area.current_satisfaction }}%
+                </strong>
+
+            </div>
+
+            <div class="progress">
+                <div
+                    class="progress-bar"
+                    style="width: {{ area.current_satisfaction }}%">
+                </div>
+            </div>
+
+            <div class="area-stats">
+
+                <div>
+                    <span>Objetivo</span>
+                    <strong>{{ area.desired_satisfaction }}%</strong>
+                </div>
+
+                <div>
+                    <span>Gap</span>
+                    <strong>{{ area.gap }}</strong>
+                </div>
+
+                <div>
+                    <span>Planes</span>
+                    <strong>{{ area.plans.count }}</strong>
+                </div>
+
+            </div>
+
+        </a>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}

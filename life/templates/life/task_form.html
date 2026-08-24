@@ -1,0 +1,163 @@
+{% extends "life/base.html" %}
+
+{% block title %}Nueva tarea | Life OS{% endblock %}
+
+{% block content %}
+
+<header class="page-header">
+
+    {% if editing %}
+
+    <span class="eyebrow">
+        EDIT TASK
+    </span>
+
+    <h1>
+        Editar {{ task.name }}
+    </h1>
+
+    <p>
+        Modifica la tarea y su impacto
+        sobre tus planes.
+    </p>
+
+{% else %}
+
+    <span class="eyebrow">
+        NEW TASK
+    </span>
+
+    <h1>
+        Crear tarea
+    </h1>
+
+    <p>
+        Define una acción y cómo contribuye
+        a tus planes.
+    </p>
+
+{% endif %}
+</header>
+
+
+<form method="POST">
+
+    {% csrf_token %}
+
+
+    <div class="form-container">
+
+        <h2 class="form-section-title">
+            Tarea
+        </h2>
+
+        {% for field in form %}
+
+            <div class="form-group">
+
+                <label>
+                    {{ field.label }}
+                </label>
+
+                {{ field }}
+
+                {% for error in field.errors %}
+                    <span class="form-error">
+                        {{ error }}
+                    </span>
+                {% endfor %}
+
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+
+    <div class="form-container impact-container">
+
+        <h2 class="form-section-title">
+            Impactos
+        </h2>
+
+        <p class="form-description">
+            Indica cuánto progreso produce esta tarea
+            sobre cada plan.
+        </p>
+
+
+        {{ formset.management_form }}
+
+
+        {% for impact in formset %}
+
+            <div class="impact-row">
+
+                {% for hidden in impact.hidden_fields %}
+                    {{ hidden }}
+                {% endfor %}
+
+
+                <div class="impact-field">
+
+                    <label>
+                        Plan
+                    </label>
+
+                    {{ impact.plan }}
+
+                </div>
+
+
+                <div class="impact-field impact-percent">
+
+                    <label>
+                        Impacto
+                    </label>
+
+                    {{ impact.impact_percent }}
+
+                </div>
+
+
+                {% if impact.DELETE %}
+
+                    <div class="impact-delete">
+                        {{ impact.DELETE }}
+                        <span>Eliminar</span>
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+
+    <div class="form-actions task-form-actions">
+
+        <a
+            href="{% url 'life:task_list' %}"
+            class="button button-secondary"
+        >
+            Cancelar
+        </a>
+
+        <button
+            type="submit"
+            class="button"
+        >
+            {% if editing %}
+                Guardar cambios
+            {% else %}
+                Crear tarea
+            {% endif %}
+        </button>
+
+    </div>
+
+</form>
+
+{% endblock %}

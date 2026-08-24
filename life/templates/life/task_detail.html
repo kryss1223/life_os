@@ -1,0 +1,169 @@
+{% extends "life/base.html" %}
+
+{% block title %}{{ task.name }} | Life OS{% endblock %}
+
+{% block content %}
+
+<header class="page-header detail-header">
+
+    <div>
+
+        <span class="eyebrow">
+            TASK
+        </span>
+
+        <h1>
+            {{ task.name }}
+        </h1>
+
+        <p>
+            {{ task.description }}
+        </p>
+
+    </div>
+
+
+    <div class="detail-actions">
+
+        <a
+            href="{% url 'life:task_edit' task.pk %}"
+            class="button button-secondary"
+        >
+            Editar
+        </a>
+
+
+        <form
+            method="POST"
+            action="{% url 'life:task_delete' task.pk %}"
+            onsubmit="return confirm('¿Eliminar esta tarea?');"
+        >
+
+            {% csrf_token %}
+
+            <button
+                type="submit"
+                class="button button-danger"
+            >
+                Eliminar
+            </button>
+
+        </form>
+
+    </div>
+
+</header>
+
+
+    <form
+        method="POST"
+        action="{% url 'life:task_delete' task.pk %}"
+        onsubmit="return confirm('¿Eliminar esta tarea?');"
+    >
+
+        {% csrf_token %}
+
+        <button
+            type="submit"
+            class="button button-danger"
+        >
+            Eliminar tarea
+        </button>
+
+    </form>
+
+</header>
+</header>
+
+
+<div class="metric-grid">
+
+    <div class="metric-card">
+        <span>Estimado</span>
+        <strong>{{ task.estimated_hours }}h</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Real</span>
+        <strong>{{ task.actual_hours }}h</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Estado</span>
+        <strong>{{ task.get_status_display }}</strong>
+    </div>
+
+</div>
+
+
+<section>
+
+    <div class="section-title">
+        <h2>Impactos</h2>
+    </div>
+
+    <div class="table-card">
+
+        {% for impact in impacts %}
+
+            <div class="data-row">
+
+                <div>
+                    <strong>
+                        {{ impact.plan.name }}
+                    </strong>
+
+                    <span>
+                        {{ impact.plan.life_area.name }}
+                    </span>
+                </div>
+
+                <strong>
+                    {{ impact.impact_percent }}%
+                </strong>
+
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+
+{% if subtasks %}
+
+<section>
+
+    <div class="section-title">
+        <h2>Subtareas</h2>
+    </div>
+
+    <div class="tasks">
+
+        {% for subtask in subtasks %}
+
+            <a
+                href="{% url 'life:task_detail' subtask.pk %}"
+                class="task card-link"
+            >
+
+                <strong>
+                    {{ subtask.name }}
+                </strong>
+
+                <span>
+                    {{ subtask.get_status_display }}
+                </span>
+
+            </a>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+{% endif %}
+
+{% endblock %}

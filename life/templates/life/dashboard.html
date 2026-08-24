@@ -1,0 +1,220 @@
+{% extends "life/base.html" %}
+
+{% block title %}
+Dashboard | Life OS
+{% endblock %}
+
+
+{% block content %}
+
+<header class="page-header">
+
+    <div>
+        <span class="eyebrow">PERSONAL LIFE OS</span>
+        <h1>Dashboard</h1>
+        <p>Estado general de tus áreas y planes.</p>
+    </div>
+
+</header>
+
+
+<section>
+
+    <div class="section-title">
+        <h2>Áreas de vida</h2>
+    </div>
+    <div class="area-grid">
+
+        {% for area in areas %}
+
+            <article class="area-card">
+
+                <div class="area-card-header">
+
+                    <div>
+                        <h3>{{ area.name }}</h3>
+                        <span>
+                            Importancia {{ area.importance_weight }}%
+                        </span>
+                    </div>
+
+                    <strong>
+                        {{ area.current_satisfaction }}%
+                    </strong>
+
+                </div>
+
+
+                <div class="progress">
+
+                    <div
+                        class="progress-bar"
+                        style="width: {{ area.current_satisfaction }}%">
+                    </div>
+
+                </div>
+
+
+                <div class="area-stats">
+
+                    <div>
+                        <span>Objetivo</span>
+                        <strong>
+                            {{ area.desired_satisfaction }}%
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Gap</span>
+                        <strong>
+                            {{ area.gap }}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Horas objetivo</span>
+                        <strong>
+                            {{ area.weekly_hours_target }}h
+                        </strong>
+                    </div>
+
+                </div>
+
+            </article>
+
+        {% empty %}
+
+            <p>
+                Todavía no tienes áreas creadas.
+            </p>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+
+
+<section>
+
+    <div class="section-title">
+        <h2>Planes activos</h2>
+    </div>
+
+    <div class="section-title section-title-row">
+
+
+    <a
+        href="{% url 'life:plan_create' %}"
+        class="button"
+    >
+        + Nuevo plan
+    </a>
+
+</div>
+
+    <div class="plans">
+
+        {% for plan in active_plans %}
+
+            <article class="plan">
+
+                <div>
+
+                    <span class="plan-area">
+                       {{ plan.life_area.name }}
+                    </span>
+
+                    <h3>
+                        <a style="text-decoration: none; color: white;" href="{% url 'life:plan_detail' plan.pk %}">{{ plan.name }}</a>
+                    </h3>
+
+                </div>
+
+
+                <div class="plan-progress">
+
+                    <strong>
+                        {{ plan.progress }}%
+                    </strong>
+
+                    <div class="progress">
+
+                        <div
+                            class="progress-bar"
+                            style="width: {{ plan.progress }}%">
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+        {% empty %}
+
+            <p>No tienes planes activos.</p>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+
+
+<section>
+
+    <div class="section-title">
+        <h2>Próximas tareas</h2>
+    </div>
+
+    <div class="section-title section-title-row">
+        <a 
+                    href="{% url 'life:task_create' %}"
+                    class="button"
+                >
+                    + Nueva Tárea
+                </a>
+
+    </div>
+
+    <div class="tasks">
+
+        {% for task in pending_tasks %}
+
+            <div class="task">
+
+                <div>
+
+                    <strong>
+                        {{ task.name }}
+                    </strong>
+
+                    {% if task.due_date %}
+                        <span>
+                            {{ task.due_date }}
+                        </span>
+                    {% endif %}
+
+                </div>
+
+
+                <span class="task-status">
+                    {{ task.get_status_display }}
+                </span>
+
+            </div>
+
+        {% empty %}
+
+            <p>No tienes tareas pendientes.</p>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+{% endblock %}
