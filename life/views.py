@@ -17,7 +17,9 @@ from .models import (
     LifeAreaSnapshot,
     Plan,
     Task,
+    Week,
     WeeklyTracking,
+    WeeklyTaskAllocation,
 )
 
 from .forms import WeeklyPlannerForm
@@ -817,46 +819,115 @@ def planning(request):
     )
 
 
-    # -------------------------
-    # WEEKLY PLANNER
-    # -------------------------
+            # -------------------------
+        # WEEKLY PLANNER
+        # -------------------------
+
+    today = date.today()
+
+    week_start = (
+            today - timedelta(days=today.weekday())
+        )
+
+    current_week = Week.objects.filter(
+            user=request.user,
+            week_start=week_start,
+        ).first()
+
+
+    fixed_allocations = (
+            WeeklyTaskAllocation.objects
+            .filter(
+                week=current_week,
+            )
+            .select_related("task")
+            .order_by("task__due_date")
+            if current_week
+            else []
+        )
+
 
     planner_form = WeeklyPlannerForm(
-        request.POST or None
-    )
+            request.POST or None
+        )
 
     planner_result = None
 
-    if (
-        request.method == "POST"
-        and planner_form.is_valid()
-    ):
-        available_hours = (
-            planner_form.cleaned_data[
-                "available_hours"
-            ]
-        )
 
-        planner_tasks = (
-            Task.objects
-            .filter(
-                plans__life_area__user=request.user,
-                due_date__isnull=False,
-            )
-            .exclude(
-                status__in=[
-                    Task.Status.COMPLETED,
-                    Task.Status.CANCELLED,
+    if (
+            request.method == "POST"
+            and planner_form.is_valid()
+        ):
+
+            available_hours = (
+                planner_form.cleaned_data[
+                    "available_hours"
                 ]
             )
-            .distinct()
-        )
 
-        planner_result = build_weekly_plan(
-            planner_tasks,
-            available_hours,
-        )
+            planner_tasks = (
+                Task.objects
+                .filter(
+                    plans__life_area__user=request.user,
+                    due_date__isnull=False,
+                )
+                .exclude(
+                    status__in=[
+                        Task.Status.COMPLETED,
+                        Task.Status.CANCELLED,
+                    ]
+                )
+                .distinct()
+            )
 
+            planner_result = build_weekly_plan(
+                planner_tasks,
+                available_hours,
+            )
+
+            action = request.POST.get("action")
+
+            if action == "save":
+
+                week, created = Week.objects.get_or_create(
+                    user=request.user,
+                    week_start=week_start,
+                )
+
+                week.available_hours = available_hours
+
+                # Si ya añadiste PlanningMode:
+                week.planning_mode = (
+                    Week.PlanningMode.OPTIMIZED
+                )
+
+                week.save()
+
+                # IDs que forman parte de esta planificación
+                planned_task_ids = []
+
+                for item in planner_result["tasks"]:
+
+                    task = item["task"]
+
+                    planned_task_ids.append(task.pk)
+
+                    WeeklyTaskAllocation.objects.update_or_create(
+                        week=week,
+                        task=task,
+                        defaults={
+                            "planned_hours":
+                                item["weekly_hours_needed"]
+                        },
+                    )
+
+                # Quitamos asignaciones antiguas que
+                # ya no forman parte del cálculo actual
+                week.task_allocations.exclude(
+                    task_id__in=planned_task_ids
+                ).delete()
+
+                return redirect("life:planning")
 
     context = {
         "year": year,
@@ -877,6 +948,9 @@ def planning(request):
 
         "planner_form": planner_form,
         "planner_result": planner_result,
+
+        "current_week": current_week,
+        "fixed_allocations": fixed_allocations,
     }
 
     return render(

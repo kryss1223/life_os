@@ -26,6 +26,56 @@ Planning | Life OS
     </p>
 
 </header>
+{% if fixed_allocations %}
+
+<section>
+
+    <div class="section-title">
+        <span class="eyebrow">
+            THIS WEEK
+        </span>
+
+        <h2>Planificación actual</h2>
+    </div>
+
+    <div class="plans">
+
+        {% for allocation in fixed_allocations %}
+
+            <div class="plan">
+
+                <div>
+                    <h3>
+                        {{ allocation.task.name }}
+                    </h3>
+
+                    <span class="plan-area">
+                        Deadline:
+                        {{ allocation.task.due_date|date:"d M" }}
+                    </span>
+                </div>
+
+                <div class="plan-progress">
+
+                    <strong>
+                        {{ allocation.planned_hours|floatformat:1 }}h
+                    </strong>
+
+                    <span>
+                        esta semana
+                    </span>
+
+                </div>
+
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+{% endif %}
 <section class="weekly-planner">
 
     <div class="section-title">
@@ -36,29 +86,53 @@ Planning | Life OS
     <form method="POST" class="planner-card">
         {% csrf_token %}
 
+        <input type="hidden" name="action" value="calculate">
+
         <div class="planner-hours">
-
             <span>0h</span>
-
             {{ planner_form.available_hours }}
-
             <span>84h</span>
-
         </div>
 
         <strong class="planner-value">
-            <span id="hours-value">20</span>h disponibles
+            <span id="hours-value">
+                {{ planner_form.available_hours.value|default:20 }}
+            </span>h disponibles
         </strong>
 
         <button type="submit" class="button">
             Calcular mi semana
         </button>
-
     </form>
 
 </section>
 
 {% if planner_result %}
+
+<form method="POST" class="save-planning-form">
+
+    {% csrf_token %}
+
+    <input
+        type="hidden"
+        name="action"
+        value="save"
+    >
+
+    <input
+        type="hidden"
+        name="available_hours"
+        value="{{ planner_result.available_hours }}"
+    >
+
+    <button
+        type="submit"
+        class="button"
+    >
+        Fijar esta planificación
+    </button>
+
+</form>
 
 <section>
 

@@ -386,3 +386,40 @@ class WeeklyTracking(models.Model):
 
     def __str__(self):
         return f"{self.plan} - {self.week}"
+
+class WeeklyTaskAllocation(models.Model):
+    week = models.ForeignKey(
+        Week,
+        on_delete=models.CASCADE,
+        related_name="task_allocations",
+    )
+
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name="weekly_allocations",
+    )
+
+    planned_hours = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["week", "task"],
+                name="unique_task_allocation_per_week",
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.task.name} - "
+            f"{self.week.week_start} - "
+            f"{self.planned_hours}h"
+        )
