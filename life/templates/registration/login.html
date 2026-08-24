@@ -1,0 +1,87 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login | Life OS</title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'life/css/style.css' %}"
+    >
+</head>
+
+<body>
+
+<div class="login-page">
+
+    <div class="login-card">
+
+        <span class="eyebrow">LIFE_OS</span>
+
+        <h1>Bienvenido</h1>
+
+        <p>Accede a tu espacio personal.</p>
+
+        <form method="POST">
+
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label>Usuario</label>
+
+                {{ form.username }}
+            </div>
+
+            <div class="form-group">
+                <label>Contraseña</label>
+
+                {{ form.password }}
+            </div>
+
+            {% if form.errors %}
+                <span class="form-error">
+                    Usuario o contraseña incorrectos.
+                </span>
+            {% endif %}
+
+            <button
+                type="submit"
+                class="button login-button"
+            >
+                Entrar
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+<div class="sidebar-bottom">
+
+    <span>
+        {{ request.user.username }}
+    </span>
+
+    <form
+        method="POST"
+        action="{% url 'logout' %}"
+    >
+        {% csrf_token %}
+
+        <button
+            type="submit"
+            class="logout-button"
+        >
+            Cerrar sesión
+        </button>
+    </form>
+
+</div>
+
+</body>
+</html>
