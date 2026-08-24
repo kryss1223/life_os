@@ -50,6 +50,20 @@
                 </div>
             </div>
 
+            <div class="area-progress-info" style="margin: 20px;">
+                    <div class="progress-label">
+                        <span>Progreso de planes</span>
+                        <span>{{ area.area_progress|floatformat:1 }}%</span>
+                    </div>
+
+                    <div class="progress">
+                        <div
+                            class="progress-bar"
+                            style="width: {{ area.area_progress }}%">
+                        </div>
+                    </div>
+            </div>
+
             <div class="area-stats">
 
                 <div>
@@ -66,6 +80,13 @@
                     <span>Planes</span>
                     <strong>{{ area.plans.count }}</strong>
                 </div>
+
+                <div>
+                        <span>Horas objetivo</span>
+                        <strong>
+                            {{ area.weekly_hours_target }}h
+                        </strong>
+                    </div>
 
             </div>
 

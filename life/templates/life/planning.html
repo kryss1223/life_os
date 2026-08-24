@@ -26,7 +26,129 @@ Planning | Life OS
     </p>
 
 </header>
+<section class="weekly-planner">
 
+    <div class="section-title">
+        <span class="eyebrow">WEEKLY PLANNER</span>
+        <h2>¿Cuánto tiempo tienes esta semana?</h2>
+    </div>
+
+    <form method="POST" class="planner-card">
+        {% csrf_token %}
+
+        <div class="planner-hours">
+
+            <span>0h</span>
+
+            {{ planner_form.available_hours }}
+
+            <span>84h</span>
+
+        </div>
+
+        <strong class="planner-value">
+            <span id="hours-value">20</span>h disponibles
+        </strong>
+
+        <button type="submit" class="button">
+            Calcular mi semana
+        </button>
+
+    </form>
+
+</section>
+
+{% if planner_result %}
+
+<section>
+
+    <div class="section-title">
+        <span class="eyebrow">RECOMMENDED LOAD</span>
+        <h2>Propuesta semanal</h2>
+    </div>
+
+    <div class="metric-grid">
+
+        <div class="metric-card">
+            <span>Disponibles</span>
+            <strong>
+                {{ planner_result.available_hours|floatformat:1 }}h
+            </strong>
+        </div>
+
+        <div class="metric-card">
+            <span>Necesarias</span>
+            <strong>
+                {{ planner_result.total_needed|floatformat:1 }}h
+            </strong>
+        </div>
+
+        <div class="metric-card">
+            <span>Margen</span>
+            <strong>
+                {{ planner_result.remaining_capacity|floatformat:1 }}h
+            </strong>
+        </div>
+
+    </div>
+
+    {% if planner_result.overloaded %}
+        <div class="planner-warning">
+            ⚠ No tienes suficientes horas esta semana para mantener
+            el ritmo necesario de todos los deadlines.
+        </div>
+    {% endif %}
+
+    <div class="plans">
+
+        {% for item in planner_result.tasks %}
+
+            <div class="plan planner-task {{ item.urgency }}">
+
+                <div>
+                    <h3>
+                        {{ item.task.name }}
+
+                        <span class="urgency-badge {{ item.urgency }}">
+                            {{ item.urgency_label }}
+                        </span>
+                    </h3>
+
+                    <span class="plan-area">
+                        Quedan
+                        {{ item.remaining_hours|floatformat:1 }}h
+                        ·
+                        {{ item.weeks_remaining }} semanas
+                    </span>
+                </div>
+
+                <div class="plan-progress">
+
+                    <strong>
+                        {{ item.weekly_hours_needed|floatformat:1 }}h
+                        esta semana
+                    </strong>
+
+                    <span>
+                        {{ item.capacity_percent|floatformat:1 }}%
+                        de tu capacidad
+                    </span>
+
+                </div>
+
+            </div>
+
+        {% empty %}
+
+            <p>No hay tareas pendientes con deadline.</p>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+{% endif %}
 
 <!-- ======================== -->
 <!-- ENERGÍA / PRIORIDADES -->
@@ -486,6 +608,18 @@ Planning | Life OS
         timeValues
     );
 
+</script>
+<script>
+    const slider = document.getElementById("available-hours");
+    const value = document.getElementById("hours-value");
+
+    if (slider && value) {
+        value.textContent = slider.value;
+
+        slider.addEventListener("input", () => {
+            value.textContent = slider.value;
+        });
+    }
 </script>
 
 {% endblock %}

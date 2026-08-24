@@ -38,21 +38,12 @@ Dashboard | Life OS
                         </span>
                     </div>
 
-                    <div class="area-progress-info">
-                    <div class="progress-label">
-                        <span>Progreso de planes</span>
-                        <span>{{ area.area_progress|floatformat:1 }}%</span>
-                    </div>
-
-                    <div class="progress">
-                        <div
-                            class="progress-bar"
-                            style="width: {{ area.area_progress }}%">
-                        </div>
-                    </div>
+                    <strong>
+                        {{ area.current_satisfaction }}%
+                    </strong>
 
                 </div>
-
+                
 
                 <div class="progress">
 
@@ -86,8 +77,25 @@ Dashboard | Life OS
                             {{ area.weekly_hours_target }}h
                         </strong>
                     </div>
+                    <div>
+                    <span>Planes</span>
+                    <strong>{{ area.plans.count }}</strong>
+                </div>
 
                 </div>
+
+                <div class="area-progress-info">
+                    <div class="progress-label" style="margin: 10px;">
+                        <span>Progreso de planes</span>
+                        <span>{{ area.area_progress|floatformat:1 }}%</span>
+                    </div>
+
+                    <div class="progress">
+                        <div
+                            class="progress-bar"
+                            style="width: {{ area.area_progress }}%">
+                        </div>
+                    </div>
 
             </article>
 

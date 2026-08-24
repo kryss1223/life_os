@@ -431,3 +431,94 @@
         padding: 14px;
     }
 }
+
+
+/* =========================
+   WEEKLY PLANNER
+========================= */
+
+.weekly-planner {
+    margin-bottom: 50px;
+}
+
+.planner-card {
+    max-width: 760px;
+
+    background: #161619;
+    border: 1px solid #29292e;
+    border-radius: 16px;
+
+    padding: 24px;
+}
+
+.planner-hours {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+
+    gap: 15px;
+}
+
+.planner-hours input[type="range"] {
+    width: 100%;
+}
+
+.planner-value {
+    display: block;
+
+    margin-top: 20px;
+
+    font-size: 22px;
+}
+
+.planner-card .button {
+    margin-top: 18px;
+}
+
+.planner-warning {
+    margin-bottom: 20px;
+
+    padding: 16px 18px;
+
+    background: #35231a;
+    color: #ffc56b;
+
+    border: 1px solid #5b3820;
+    border-radius: 12px;
+}
+
+.planner-task.urgent {
+    border-left: 3px solid #e85d68;
+}
+
+.planner-task.upcoming {
+    border-left: 3px solid #e9a23b;
+}
+
+.planner-task.long_term {
+    border-left: 3px solid #5d8ee8;
+}
+
+.urgency-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 4px 8px;
+
+    border-radius: 20px;
+    font-size: 9px;
+}
+
+.urgency-badge.urgent {
+    background: #3a1d20;
+    color: #ff8f98;
+}
+
+.urgency-badge.upcoming {
+    background: #3a2a16;
+    color: #ffc56b;
+}
+
+.urgency-badge.long_term {
+    background: #17253a;
+    color: #8fb8ff;
+}

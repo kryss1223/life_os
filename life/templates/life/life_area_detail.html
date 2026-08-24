@@ -27,6 +27,19 @@
         >
             Eliminar
         </a>
+    </div>
+        <div class="area-progress-info">
+                    <div class="progress-label">
+                        <span>Progreso de planes</span>
+                        <span>{{ area.area_progress|floatformat:1 }}%</span>
+                    </div>
+
+                    <div class="progress">
+                        <div
+                            class="progress-bar"
+                            style="width: {{ area.area_progress }}%">
+                        </div>
+</div>
 
     </div>
 
@@ -34,18 +47,6 @@
 
 
 <div class="metric-grid">
-
-    <div class="progress-label">
-        <span>Progreso de planes</span>
-        <span>{{ area.area_progress|floatformat:1 }}%</span>
-    </div>
-
-<div class="progress">
-    <div
-        class="progress-bar"
-        style="width: {{ area.area_progress }}%">
-    </div>
-</div>
 
     <div class="metric-card">
         <span>Deseado</span>
@@ -71,6 +72,7 @@
         <span>Prioridad</span>
         <strong>{{ area.priority_score }}</strong>
     </div>
+    
 
 </div>
 
@@ -89,6 +91,7 @@
         </a>
 
     </div>
+    
     <div class="plans">
         {% for plan in plans %}
 

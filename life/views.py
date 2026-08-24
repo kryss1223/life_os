@@ -20,6 +20,8 @@ from .models import (
     WeeklyTracking,
 )
 
+from .forms import WeeklyPlannerForm
+from .services.weekly_planner import build_weekly_plan
 
 from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
@@ -619,7 +621,6 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 from .models import LifeArea, Task
-
 @login_required
 def planning(request):
     year = int(
@@ -646,11 +647,17 @@ def planning(request):
         for area in areas
     )
 
-    area_names = [area.name for area in areas]
+    area_names = [
+        area.name
+        for area in areas
+    ]
 
     importance_values = [
         round(
-            (area.importance_weight / total_importance) * 100,
+            (
+                area.importance_weight
+                / total_importance
+            ) * 100,
             1,
         )
         if total_importance
@@ -660,7 +667,10 @@ def planning(request):
 
     time_values = [
         round(
-            (float(area.weekly_hours_target) / total_target_hours) * 100,
+            (
+                float(area.weekly_hours_target)
+                / total_target_hours
+            ) * 100,
             1,
         )
         if total_target_hours
@@ -668,8 +678,9 @@ def planning(request):
         for area in areas
     ]
 
+
     # -------------------------
-    # TASK DEADLINES
+    # CALENDARIO
     # -------------------------
 
     tasks = (
@@ -678,7 +689,6 @@ def planning(request):
             plans__life_area__user=request.user,
             due_date__year=year,
         )
-        .exclude(due_date=None)
         .distinct()
     )
 
@@ -686,10 +696,6 @@ def planning(request):
 
     for task in tasks:
         tasks_by_date[task.due_date].append(task)
-
-    # -------------------------
-    # CALENDARIO
-    # -------------------------
 
     cal = calendar.Calendar(firstweekday=0)
 
@@ -731,61 +737,111 @@ def planning(request):
             "name": calendar.month_name[month_number],
             "weeks": month_weeks,
         })
-        # -------------------------
-        # DESAJUSTES IMPORTANCIA / TIEMPO
-        # -------------------------
-
-        area_balance = []
-
-        for area, importance_share, time_share in zip(
-            areas,
-            importance_values,
-            time_values,
-        ):
-            difference = round(
-                time_share - importance_share,
-                1,
-            )
-
-            if difference <= -5:
-                status = "under"
-                status_label = "Poco tiempo"
-            elif difference >= 5:
-                status = "over"
-                status_label = "Mucho tiempo"
-            else:
-                status = "balanced"
-                status_label = "Equilibrado"
-
-            area_balance.append({
-                "area": area,
-                "importance_share": importance_share,
-                "time_share": time_share,
-                "difference": difference,
-                "status": status,
-                "status_label": status_label,
-            })
 
 
-        area_balance.sort(
-            key=lambda item: abs(item["difference"]),
-            reverse=True,
+    # -------------------------
+    # DESAJUSTES
+    # -------------------------
+
+    area_balance = []
+
+    for area, importance_share, time_share in zip(
+        areas,
+        importance_values,
+        time_values,
+    ):
+        difference = round(
+            time_share - importance_share,
+            1,
         )
 
-        largest_mismatch = (
-            area_balance[0]
-            if area_balance
-            else None
-        )
-        today = date.today()
-        deadline_limit = today + timedelta(days=30)
+        if difference <= -5:
+            status = "under"
+            status_label = "Poco tiempo"
 
-        upcoming_deadlines = (
+        elif difference >= 5:
+            status = "over"
+            status_label = "Mucho tiempo"
+
+        else:
+            status = "balanced"
+            status_label = "Equilibrado"
+
+        area_balance.append({
+            "area": area,
+            "importance_share": importance_share,
+            "time_share": time_share,
+            "difference": difference,
+            "status": status,
+            "status_label": status_label,
+        })
+
+    area_balance.sort(
+        key=lambda item: abs(item["difference"]),
+        reverse=True,
+    )
+
+    largest_mismatch = (
+        area_balance[0]
+        if area_balance
+        else None
+    )
+
+
+    # -------------------------
+    # DEADLINES
+    # -------------------------
+
+    today = date.today()
+    deadline_limit = today + timedelta(days=30)
+
+    upcoming_deadlines = (
+        Task.objects
+        .filter(
+            plans__life_area__user=request.user,
+            due_date__gte=today,
+            due_date__lte=deadline_limit,
+        )
+        .exclude(
+            status__in=[
+                Task.Status.COMPLETED,
+                Task.Status.CANCELLED,
+            ]
+        )
+        .prefetch_related(
+            "plans",
+            "plans__life_area",
+        )
+        .order_by("due_date")
+        .distinct()
+    )
+
+
+    # -------------------------
+    # WEEKLY PLANNER
+    # -------------------------
+
+    planner_form = WeeklyPlannerForm(
+        request.POST or None
+    )
+
+    planner_result = None
+
+    if (
+        request.method == "POST"
+        and planner_form.is_valid()
+    ):
+        available_hours = (
+            planner_form.cleaned_data[
+                "available_hours"
+            ]
+        )
+
+        planner_tasks = (
             Task.objects
             .filter(
                 plans__life_area__user=request.user,
-                due_date__gte=today,
-                due_date__lte=deadline_limit,
+                due_date__isnull=False,
             )
             .exclude(
                 status__in=[
@@ -793,13 +849,14 @@ def planning(request):
                     Task.Status.CANCELLED,
                 ]
             )
-            .prefetch_related(
-                "plans",
-                "plans__life_area",
-            )
-            .order_by("due_date")
             .distinct()
         )
+
+        planner_result = build_weekly_plan(
+            planner_tasks,
+            available_hours,
+        )
+
 
     context = {
         "year": year,
@@ -817,6 +874,9 @@ def planning(request):
         "area_balance": area_balance,
         "largest_mismatch": largest_mismatch,
         "upcoming_deadlines": upcoming_deadlines,
+
+        "planner_form": planner_form,
+        "planner_result": planner_result,
     }
 
     return render(

@@ -283,3 +283,21 @@ TaskImpactFormSet = inlineformset_factory(
     extra=3,
     can_delete=True,
 )
+
+
+class WeeklyPlannerForm(forms.Form):
+    available_hours = forms.IntegerField(
+        min_value=0,
+        max_value=84,
+        initial=20,
+        label="Horas disponibles esta semana",
+        widget=forms.NumberInput(
+            attrs={
+                "type": "range",
+                "min": "0",
+                "max": "84",
+                "step": "1",
+                "id": "available-hours",
+            }
+        ),
+    )
