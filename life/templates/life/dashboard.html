@@ -38,9 +38,18 @@ Dashboard | Life OS
                         </span>
                     </div>
 
-                    <strong>
-                        {{ area.current_satisfaction }}%
-                    </strong>
+                    <div class="area-progress-info">
+                    <div class="progress-label">
+                        <span>Progreso de planes</span>
+                        <span>{{ area.area_progress|floatformat:1 }}%</span>
+                    </div>
+
+                    <div class="progress">
+                        <div
+                            class="progress-bar"
+                            style="width: {{ area.area_progress }}%">
+                        </div>
+                    </div>
 
                 </div>
 

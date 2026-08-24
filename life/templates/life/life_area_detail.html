@@ -35,10 +35,17 @@
 
 <div class="metric-grid">
 
-    <div class="metric-card">
-        <span>Actual</span>
-        <strong>{{ area.current_satisfaction }}%</strong>
+    <div class="progress-label">
+        <span>Progreso de planes</span>
+        <span>{{ area.area_progress|floatformat:1 }}%</span>
     </div>
+
+<div class="progress">
+    <div
+        class="progress-bar"
+        style="width: {{ area.area_progress }}%">
+    </div>
+</div>
 
     <div class="metric-card">
         <span>Deseado</span>

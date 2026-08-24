@@ -38,7 +38,27 @@ class LifeArea(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    @property
+    def area_progress(self):
+        plans = self.plans.exclude(
+            status=Plan.Status.CANCELLED
+        )
 
+        total_weight = sum(
+            plan.importance_weight
+            for plan in plans
+        )
+
+        if total_weight == 0:
+            return Decimal("0")
+
+        progress = sum(
+            Decimal(plan.importance_weight)
+            * plan.progress
+            for plan in plans
+    )   
+
+        return progress / Decimal(total_weight)
     @property
     def gap(self):
         return self.desired_satisfaction - self.current_satisfaction
