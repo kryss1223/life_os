@@ -1,0 +1,30 @@
+{% extends "life/base.html" %}
+
+{% block title %}
+Crear cuenta | Life OS
+{% endblock %}
+
+{% block content %}
+
+<div class="form-container">
+
+    <span class="eyebrow">LIFE_OS</span>
+    <h1>Crear cuenta</h1>
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <div class="form-actions">
+            <button type="submit" class="button">
+                Crear cuenta
+            </button>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

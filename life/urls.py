@@ -6,6 +6,7 @@ app_name = "life"
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
 
+    path( "accounts/register/", views.register, name="register",),
     path("areas/", views.life_area_list, name="life_area_list"),
     path("areas/new/", views.life_area_create, name="life_area_create"),
     path("areas/<int:pk>/", views.life_area_detail, name="life_area_detail"),
