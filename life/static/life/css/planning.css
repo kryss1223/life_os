@@ -376,3 +376,58 @@
         flex-direction: column;
     }
 }
+
+
+@media (max-width: 900px) {
+
+    .planning-charts {
+        grid-template-columns: 1fr;
+    }
+
+    .year-calendar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .balance-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .balance-values {
+        width: 100%;
+    }
+}
+
+
+@media (max-width: 600px) {
+
+    .year-calendar {
+        grid-template-columns: 1fr;
+    }
+
+    .calendar-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .year-navigation {
+        width: 100%;
+    }
+
+    .year-navigation .button {
+        flex: 1;
+    }
+
+    .chart-wrapper {
+        height: 260px;
+    }
+
+    .balance-values {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .deadline-row {
+        padding: 14px;
+    }
+}

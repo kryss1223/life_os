@@ -68,7 +68,6 @@ body {
 .content {
     flex: 1;
     padding: 50px;
-    max-width: 1500px;
 }
 
 .page-header {
@@ -692,5 +691,156 @@ textarea.form-control {
     .calendar-header {
         align-items: flex-start;
         flex-direction: column;
+    }
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 900px) {
+
+    .app {
+        display: block;
+    }
+
+    /* Sidebar pasa arriba */
+    .sidebar {
+        width: 100%;
+        min-height: auto;
+
+        padding: 18px 20px;
+
+        flex-direction: row;
+        align-items: center;
+        gap: 20px;
+
+        border-right: none;
+        border-bottom: 1px solid #29292e;
+    }
+
+    .logo {
+        margin-bottom: 0;
+        white-space: nowrap;
+    }
+
+    .sidebar nav {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 5px;
+    }
+
+    .sidebar nav a {
+        white-space: nowrap;
+    }
+
+    .sidebar-bottom {
+        display: none;
+    }
+
+    /* Contenido */
+    .content {
+        width: 100%;
+        max-width: none;
+        padding: 30px 24px;
+    }
+
+    .page-header {
+        margin-bottom: 35px;
+    }
+
+    .area-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .detail-header {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 600px) {
+
+    .sidebar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sidebar nav {
+        width: 100%;
+    }
+
+    .content {
+        padding: 24px 16px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+    }
+
+    /* Cards */
+    .area-grid,
+    .metric-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .area-stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* Planes */
+    .plan {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .plan-progress {
+        width: 100%;
+    }
+
+    /* Tareas */
+    .task {
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    /* Tablas falsas */
+    .data-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* Formularios */
+    .form-container {
+        width: 100%;
+        max-width: none;
+        padding: 20px;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .form-actions .button {
+        width: 100%;
+    }
+
+    .detail-actions {
+        width: 100%;
+    }
+
+    .detail-actions .button {
+        flex: 1;
+    }
+
+    /* Task impacts */
+    .impact-row {
+        grid-template-columns: 1fr;
     }
 }
