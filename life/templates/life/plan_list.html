@@ -1,63 +1,249 @@
 {% extends "life/base.html" %}
 
-{% block title %}{{ area.name }} | Life OS{% endblock %}
+{% block title %}
+    {{ area.name }} | Life OS
+{% endblock %}
+
 
 {% block content %}
 
-<header class="page-header">
+<header class="page-header area-detail-header">
 
-    <span class="eyebrow">LIFE AREA</span>
-    <h1>Tareas</h1>
-    <h1>{{ area.name }}</h1>
+    <span class="eyebrow">
+        LIFE AREA
+    </span>
 
-    <p>{{ area.description }}</p>
+    <h1>
+        {{ area.name }}
+    </h1>
+
+    {% if area.description %}
+        <p>
+            {{ area.description }}
+        </p>
+    {% else %}
+        <p>
+            Tus planes, objetivos y evolución dentro de esta área.
+        </p>
+    {% endif %}
 
 </header>
 
-<div class="section-title section-title-row">
 
 
-    <a
-        href="{% url 'life:plan_create' %}"
-        class="button"
-    >
-        + Nuevo plan
-    </a>
+<!-- ============================ -->
+<!-- PLANES -->
+<!-- ============================ -->
 
-</div>
+<section class="area-plans-section">
 
-<section>
+    <div class="section-title-row plans-section-header">
 
-    <div class="section-title">
-        <h2>Planes</h2>
+        <div>
+            <span class="eyebrow">
+                ACTIVE ROADMAP
+            </span>
+
+            <h2>
+                Planes
+            </h2>
+        </div>
+
+
+        <a
+            href="{% url 'life:plan_create' %}"
+            class="button"
+        >
+            + Nuevo plan
+        </a>
+
     </div>
 
-    <div class="plans">
+
+    <div class="plans-grid">
 
         {% for plan in plans %}
 
-        <a
-            href="{% url 'life:plan_detail' plan.pk %}"
-            class="plan card-link"
-        >
+            <a
+                href="{% url 'life:plan_detail' plan.pk %}"
+                class="
+                    plan-card
 
-            <div>
-                <span class="plan-area">
-                    {{ plan.get_status_display }}
-                </span>
+                    {% if plan.progress >= 100 %}
+                        progress-complete
 
-                <h3>{{ plan.name }}</h3>
-            </div>
+                    {% elif plan.progress >= 75 %}
+                        progress-high
 
-            <strong>
-                {{ plan.progress }}%
-            </strong>
+                    {% elif plan.progress >= 50 %}
+                        progress-medium
 
-        </a>
+                    {% elif plan.progress >= 25 %}
+                        progress-started
+
+                    {% else %}
+                        progress-low
+                    {% endif %}
+                "
+            >
+
+                <!-- HEADER -->
+
+                <div class="plan-card-header">
+
+                    <span
+                        class="
+                            plan-status
+                            status-{{ plan.status|lower }}
+                        "
+                    >
+                        {{ plan.get_status_display }}
+                    </span>
+
+
+                    <strong class="plan-percent">
+                        {{ plan.progress|floatformat:0 }}%
+                    </strong>
+
+                </div>
+
+
+                <!-- TITLE -->
+
+                <div class="plan-card-body">
+
+                    <h3>
+                        {{ plan.name }}
+                    </h3>
+
+
+                    <div class="plan-meta">
+
+                        <span>
+                            <small>
+                                IMPORTANCIA
+                            </small>
+
+                            <strong>
+                                {{ plan.importance_weight }}
+                            </strong>
+                        </span>
+
+
+                        {% if plan.estimated_hours %}
+
+                            <span>
+                                <small>
+                                    ESTIMACIÓN
+                                </small>
+
+                                <strong>
+                                    {{ plan.estimated_hours|floatformat:0 }}h
+                                </strong>
+                            </span>
+
+                        {% endif %}
+
+
+                        {% if plan.target_date %}
+
+                            <span>
+                                <small>
+                                    OBJETIVO
+                                </small>
+
+                                <strong>
+                                    {{ plan.target_date|date:"d M Y" }}
+                                </strong>
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <!-- PROGRESS -->
+
+                <div class="plan-card-progress">
+
+                    <div class="plan-progress-track">
+
+                        <div
+                            class="plan-progress-fill"
+                            style="width: {{ plan.progress }}%;"
+                        ></div>
+
+                    </div>
+
+
+                    <div class="plan-progress-caption">
+
+                        {% if plan.progress >= 100 %}
+
+                            <span>
+                                Completado
+                            </span>
+
+                        {% elif plan.progress >= 75 %}
+
+                            <span>
+                                Recta final
+                            </span>
+
+                        {% elif plan.progress >= 50 %}
+
+                            <span>
+                                Buen avance
+                            </span>
+
+                        {% elif plan.progress >= 25 %}
+
+                            <span>
+                                En marcha
+                            </span>
+
+                        {% else %}
+
+                            <span>
+                                Empezando
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </a>
+
 
         {% empty %}
 
-            <p>No hay planes todavía.</p>
+            <div class="plans-empty-state">
+
+                <span class="eyebrow">
+                    SIN PLANES
+                </span>
+
+                <h3>
+                    Todavía no hay ningún plan
+                </h3>
+
+                <p>
+                    Crea uno para empezar a organizar
+                    esta área.
+                </p>
+
+                <a
+                    href="{% url 'life:plan_create' %}"
+                    class="button"
+                >
+                    + Crear primer plan
+                </a>
+
+            </div>
 
         {% endfor %}
 
@@ -66,39 +252,89 @@
 </section>
 
 
-<section>
+
+<!-- ============================ -->
+<!-- HISTÓRICO -->
+<!-- ============================ -->
+
+<section class="area-history-section">
 
     <div class="section-title">
-        <h2>Histórico semanal</h2>
-    </div>
 
-    <div class="table-card">
+        <span class="eyebrow">
+            HISTORY
+        </span>
 
-        {% for snapshot in snapshots %}
-
-            <div class="data-row">
-
-                <span>
-                    {{ snapshot.week_start }}
-                </span>
-
-                <span>
-                    {{ snapshot.hours_spent }}h
-                </span>
-
-                <strong>
-                    {{ snapshot.satisfaction }}%
-                </strong>
-
-            </div>
-
-        {% empty %}
-
-            <p>No hay datos semanales todavía.</p>
-
-        {% endfor %}
+        <h2>
+            Histórico semanal
+        </h2>
 
     </div>
+
+
+    {% if snapshots %}
+
+        <div class="table-card">
+
+            {% for snapshot in snapshots %}
+
+                <div class="data-row">
+
+                    <div>
+                        <span>
+                            Semana
+                        </span>
+
+                        <strong>
+                            {{ snapshot.week_start }}
+                        </strong>
+                    </div>
+
+
+                    <div>
+                        <span>
+                            Tiempo dedicado
+                        </span>
+
+                        <strong>
+                            {{ snapshot.hours_spent }}h
+                        </strong>
+                    </div>
+
+
+                    <div>
+                        <span>
+                            Satisfacción
+                        </span>
+
+                        <strong>
+                            {{ snapshot.satisfaction }}%
+                        </strong>
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+
+    {% else %}
+
+        <div class="history-empty-state">
+
+            <span>
+                Aún no hay datos semanales.
+            </span>
+
+            <p>
+                Cuando empieces a registrar semanas,
+                aquí podrás ver la evolución del área.
+            </p>
+
+        </div>
+
+    {% endif %}
 
 </section>
 
