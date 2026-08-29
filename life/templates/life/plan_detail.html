@@ -4,17 +4,90 @@
 
 {% block content %}
 
-<header class="page-header detail-header">
+<header class="plan-detail-hero">
 
-    <div>
-        <span class="eyebrow">
-            {{ plan.life_area.name }}
-        </span>
+    <div class="plan-detail-main">
 
-        <h1>{{ plan.name }}</h1>
+        <div class="plan-detail-eyebrow">
 
-        <p>{{ plan.description }}</p>
+            <span class="eyebrow">
+                {{ plan.life_area.name }}
+            </span>
+
+            <span class="plan-detail-status status-{{ plan.status|lower }}">
+                {{ plan.get_status_display }}
+            </span>
+
+        </div>
+
+
+        <h1>
+            {{ plan.name }}
+        </h1>
+
+
+        {% if plan.description %}
+            <p>
+                {{ plan.description }}
+            </p>
+        {% endif %}
+
+
+        <div class="plan-detail-meta">
+
+            <span>
+                Importancia
+                <strong>{{ plan.importance_weight }}</strong>
+            </span>
+
+
+            {% if plan.start_date %}
+                <span>
+                    Inicio
+                    <strong>
+                        {{ plan.start_date|date:"d M Y" }}
+                    </strong>
+                </span>
+            {% endif %}
+
+
+            {% if plan.target_date %}
+                <span>
+                    Objetivo
+                    <strong>
+                        {{ plan.target_date|date:"d M Y" }}
+                    </strong>
+                </span>
+            {% endif %}
+
+        </div>
+
+
+        <div class="plan-main-progress">
+
+            <div class="plan-main-progress-info">
+
+                <span>Progreso del plan</span>
+
+                <strong>
+                    {{ plan.progress|floatformat:0 }}%
+                </strong>
+
+            </div>
+
+            <div class="plan-main-progress-track">
+
+                <div
+                    class="plan-main-progress-fill"
+                    style="width: {{ plan.progress }}%;"
+                ></div>
+
+            </div>
+
+        </div>
+
     </div>
+
 
     <div class="detail-actions">
 
@@ -30,6 +103,7 @@
             action="{% url 'life:plan_delete' plan.pk %}"
             onsubmit="return confirm('¿Eliminar este plan?');"
         >
+
             {% csrf_token %}
 
             <button
@@ -38,6 +112,7 @@
             >
                 Eliminar
             </button>
+
         </form>
 
     </div>
@@ -45,36 +120,85 @@
 </header>
 
 
-<div class="metric-grid">
+<div class="metric-grid plan-metrics">
 
     <div class="metric-card">
-        <span>Progreso</span>
-        <strong>{{ plan.progress }}%</strong>
+        <span>Tareas completadas</span>
+
+        <strong>
+            {{ completed_tasks }}
+            /
+            {{ total_tasks }}
+        </strong>
     </div>
 
-    <div class="metric-card">
-        <span>Importancia</span>
-        <strong>{{ plan.importance_weight }}%</strong>
-    </div>
 
     <div class="metric-card">
-        <span>Horas estimadas</span>
-        <strong>{{ plan.estimated_hours }}h</strong>
+        <span>Horas registradas</span>
+
+        <strong>
+            {{ total_actual_hours|floatformat:1 }}h
+        </strong>
     </div>
 
+
     <div class="metric-card">
-        <span>Estado</span>
-        <strong>{{ plan.get_status_display }}</strong>
+        <span>Horas restantes</span>
+
+        <strong>
+            {{ remaining_hours|floatformat:1 }}h
+        </strong>
+
+        <small>
+            de {{ plan.estimated_hours|floatformat:1 }}h estimadas
+        </small>
+    </div>
+
+
+    <div class="metric-card">
+        <span>Tiempo restante</span>
+
+        <strong>
+
+            {% if days_remaining == None %}
+
+                —
+
+            {% elif days_remaining < 0 %}
+
+                Vencido
+
+            {% elif days_remaining == 0 %}
+
+                Hoy
+
+            {% else %}
+
+                {{ days_remaining }} días
+
+            {% endif %}
+
+        </strong>
     </div>
 
 </div>
 
-
-<section>
+<section class="plan-tasks-section">
 
     <div class="section-title section-title-row">
 
-        <h2>Planes</h2>
+        <div>
+
+            <span class="eyebrow">
+                PLAN WORK
+            </span>
+
+            <h2>
+                Tareas
+            </h2>
+
+        </div>
+
 
         <a
             href="{% url 'life:task_create' %}"
@@ -86,26 +210,109 @@
     </div>
 
 
-    <div class="tasks">
+    <div class="plan-task-list">
 
-        {% for task in tasks %}
+        {% for item in task_rows %}
 
             <a
-                href="{% url 'life:task_detail' task.pk %}"
-                class="task card-link"
+                href="{% url 'life:task_detail' item.task.pk %}"
+                class="
+                    plan-task-card
+                    task-status-{{ item.task.status|lower }}
+                "
             >
 
-                <strong>{{ task.name }}</strong>
+                <div class="plan-task-top">
 
-                <span class="task-status">
-                    {{ task.get_status_display }}
-                </span>
+                    <div>
+
+                        <h3>
+                            {{ item.task.name }}
+                        </h3>
+
+                        {% if item.task.description %}
+
+                            <p>
+                                {{ item.task.description|truncatechars:90 }}
+                            </p>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <span class="task-status">
+                        {{ item.task.get_status_display }}
+                    </span>
+
+                </div>
+
+
+                <div class="plan-task-data">
+
+                    <span>
+                        <small>IMPACTO</small>
+
+                        <strong>
+                            {{ item.impact|floatformat:0 }}%
+                        </strong>
+                    </span>
+
+
+                    <span>
+                        <small>HORAS</small>
+
+                        <strong>
+                            {{ item.task.actual_hours|floatformat:1 }}
+                            /
+                            {{ item.task.estimated_hours|floatformat:1 }}h
+                        </strong>
+                    </span>
+
+
+                    <span>
+                        <small>RESTANTES</small>
+
+                        <strong>
+                            {{ item.remaining_hours|floatformat:1 }}h
+                        </strong>
+                    </span>
+
+
+                    <span>
+                        <small>DEADLINE</small>
+
+                        <strong>
+
+                            {% if item.task.due_date %}
+                                {{ item.task.due_date|date:"d M Y" }}
+                            {% else %}
+                                —
+                            {% endif %}
+
+                        </strong>
+                    </span>
+
+                </div>
+
+
+                <div class="task-time-progress">
+
+                    <div
+                        class="task-time-progress-fill"
+                        style="width: {{ item.time_progress }}%;"
+                    ></div>
+
+                </div>
 
             </a>
 
+
         {% empty %}
 
-            <p>No hay tareas todavía.</p>
+            <div class="plan-empty">
+                Todavía no hay tareas asociadas a este plan.
+            </div>
 
         {% endfor %}
 
@@ -113,46 +320,95 @@
 
 </section>
 
-
-<section>
+<section class="plan-tracking-section">
 
     <div class="section-title">
-        <h2>Tracking semanal</h2>
-    </div>
 
-    <div class="table-card">
+        <span class="eyebrow">
+            HISTORY
+        </span>
 
-        {% for week in tracking %}
-
-            <div class="data-row">
-
-                <span>
-                    {{ week.week_start }}
-                </span>
-
-                <span>
-                    {{ week.actual_hours }} /
-                    {{ week.planned_hours }}h
-                </span>
-
-                <span>
-                    {{ week.tasks_completed }} /
-                    {{ week.tasks_total }} tareas
-                </span>
-
-                <strong>
-                    {{ week.consistency_score }}%
-                </strong>
-
-            </div>
-
-        {% empty %}
-
-            <p>Aún no hay tracking.</p>
-
-        {% endfor %}
+        <h2>
+            Tracking semanal
+        </h2>
 
     </div>
+
+
+    {% if tracking %}
+
+        <div class="plan-tracking-list">
+
+            {% for week in tracking %}
+
+                <div class="tracking-week-card">
+
+                    <div class="tracking-week-date">
+
+                        <span>SEMANA</span>
+
+                        <strong>
+                            {{ week.week.week_start|date:"d M Y" }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="tracking-stat">
+
+                        <span>Planificado</span>
+
+                        <strong>
+                            {{ week.planned_hours|default:0|floatformat:1 }}h
+                        </strong>
+
+                    </div>
+
+
+                    <div class="tracking-stat">
+
+                        <span>Real</span>
+
+                        <strong>
+                            {{ week.actual_hours|default:0|floatformat:1 }}h
+                        </strong>
+
+                    </div>
+
+
+                    <div class="tracking-stat">
+
+                        <span>Progreso</span>
+
+                        <strong>
+                            {{ week.progress_start|floatformat:0 }}%
+                            →
+                            {{ week.progress_end|floatformat:0 }}%
+                        </strong>
+
+                        <small>
+                            {% if week.progress_change > 0 %}
+                                +{{ week.progress_change|floatformat:0 }}%
+                            {% else %}
+                                {{ week.progress_change|floatformat:0 }}%
+                            {% endif %}
+                        </small>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="plan-empty">
+            Aún no hay tracking semanal.
+        </div>
+
+    {% endif %}
 
 </section>
 

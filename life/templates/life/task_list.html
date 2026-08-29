@@ -1,64 +1,480 @@
 {% extends "life/base.html" %}
 
-{% block title %}Tareas | Life OS{% endblock %}
+{% block title %}
+    Tareas | Life OS
+{% endblock %}
+
 
 {% block content %}
 
-<header class="page-header">
 
-    <span class="eyebrow">TASKS</span>
+<!-- =========================================
+     HEADER
+========================================= -->
 
-    <h1>Tareas</h1>
+<header class="task-page-header">
+
+    <span class="eyebrow">
+        TASKS
+    </span>
+
+    <h1>
+        Tareas
+    </h1>
 
     <p>
         Acciones concretas que producen progreso.
     </p>
 
-    <div class="section-title section-title-row">
-        <a 
-                    href="{% url 'life:task_create' %}"
-                    class="button"
-                >
-                    + Nueva Tárea
-                </a>
 
-    </div>
+    <a
+        href="{% url 'life:task_create' %}"
+        class="button task-create-button"
+    >
+        + Nueva tarea
+    </a>
+
 </header>
 
 
-<div class="tasks">
 
-    {% for task in tasks %}
+<!-- =========================================
+     STATS
+========================================= -->
+
+<div class="task-stats-grid">
+
+
+    <div class="task-stat-card">
+
+        <div class="task-stat-icon">
+            ☷
+        </div>
+
+        <div>
+            <span>Total</span>
+
+            <strong>
+                {{ total_tasks }}
+            </strong>
+
+            <small>
+                tareas
+            </small>
+        </div>
+
+    </div>
+
+
+    <div class="task-stat-card stat-progress">
+
+        <div class="task-stat-icon">
+            ↗
+        </div>
+
+        <div>
+            <span>En progreso</span>
+
+            <strong>
+                {{ in_progress_tasks }}
+            </strong>
+
+            <small>
+                tareas
+            </small>
+        </div>
+
+    </div>
+
+
+    <div class="task-stat-card stat-completed">
+
+        <div class="task-stat-icon">
+            ✓
+        </div>
+
+        <div>
+            <span>Completadas</span>
+
+            <strong>
+                {{ completed_tasks }}
+            </strong>
+
+            <small>
+                tareas
+            </small>
+        </div>
+
+    </div>
+
+
+    <div class="task-stat-card">
+
+        <div class="task-stat-icon">
+            ○
+        </div>
+
+        <div>
+            <span>Pendientes</span>
+
+            <strong>
+                {{ pending_tasks }}
+            </strong>
+
+            <small>
+                tareas
+            </small>
+        </div>
+
+    </div>
+
+
+    <div class="task-stat-card stat-urgent">
+
+        <div class="task-stat-icon">
+            !
+        </div>
+
+        <div>
+            <span>Urgentes</span>
+
+            <strong>
+                {{ urgent_tasks }}
+            </strong>
+
+            <small>
+                tareas
+            </small>
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================
+     FILTERS
+========================================= -->
+
+<div class="task-toolbar">
+
+
+    <div class="task-filters">
 
         <a
-            href="{% url 'life:task_detail' task.pk %}"
-            class="task card-link"
+            href="?filter=all&sort={{ current_sort }}"
+            class="
+                task-filter
+                {% if current_filter == 'all' %}
+                    active
+                {% endif %}
+            "
+        >
+            ☷ Todas
+        </a>
+
+
+        <a
+            href="?filter=today&sort={{ current_sort }}"
+            class="
+                task-filter
+                {% if current_filter == 'today' %}
+                    active
+                {% endif %}
+            "
+        >
+            Hoy
+        </a>
+
+
+        <a
+            href="?filter=week&sort={{ current_sort }}"
+            class="
+                task-filter
+                {% if current_filter == 'week' %}
+                    active
+                {% endif %}
+            "
+        >
+            Esta semana
+        </a>
+
+
+        <a
+            href="?filter=completed&sort={{ current_sort }}"
+            class="
+                task-filter
+                {% if current_filter == 'completed' %}
+                    active
+                {% endif %}
+            "
+        >
+            ✓ Completadas
+        </a>
+
+    </div>
+
+
+    <form
+        method="GET"
+        class="task-sort-form"
+    >
+
+        <input
+            type="hidden"
+            name="filter"
+            value="{{ current_filter }}"
         >
 
-            <div>
 
-                <strong>
-                    {{ task.name }}
-                </strong>
+        <select
+            name="sort"
+            onchange="this.form.submit()"
+        >
 
-                {% for plan in task.plans.all %}
+            <option
+                value="recent"
+                {% if current_sort == 'recent' %}
+                    selected
+                {% endif %}
+            >
+                Más recientes
+            </option>
 
-                    <span>
-                        {{ plan.name }}
-                    </span>
 
-                {% endfor %}
+            <option
+                value="deadline"
+                {% if current_sort == 'deadline' %}
+                    selected
+                {% endif %}
+            >
+                Fecha límite
+            </option>
+
+
+            <option
+                value="name"
+                {% if current_sort == 'name' %}
+                    selected
+                {% endif %}
+            >
+                Nombre
+            </option>
+
+        </select>
+
+    </form>
+
+</div>
+
+
+
+<!-- =========================================
+     TASK LIST
+========================================= -->
+
+<div class="task-dashboard-list">
+
+
+    {% for item in task_rows %}
+
+        <article
+            class="
+                task-dashboard-card
+
+                {% if item.task.status == 'COMPLETED' %}
+                    task-completed
+
+                {% elif item.is_urgent %}
+                    task-urgent
+
+                {% elif item.task.status == 'IN_PROGRESS' %}
+                    task-progress
+
+                {% elif item.task.status == 'PENDING' %}
+                    task-pending
+
+                {% endif %}
+            "
+        >
+
+
+            <!-- LEFT -->
+
+            <div class="task-dashboard-main">
+
+
+                <div class="task-check">
+
+                    {% if item.task.status == 'COMPLETED' %}
+                        ✓
+                    {% endif %}
+
+                </div>
+
+
+                <div class="task-dashboard-title">
+
+                    <a
+                        href="{% url 'life:task_detail' item.task.pk %}"
+                    >
+                        {{ item.task.name }}
+                    </a>
+
+
+                    <div class="task-plan-list">
+
+                        {% for plan in item.task.plans.all %}
+
+                            <span>
+                                {{ plan.name }}
+                            </span>
+
+                        {% endfor %}
+
+                    </div>
+
+
+                    <div class="task-deadline">
+
+                        {% if item.task.due_date %}
+
+                            {% if item.is_overdue %}
+
+                                <span class="deadline-overdue">
+                                    Venció el
+                                    {{ item.task.due_date|date:"d M Y" }}
+                                </span>
+
+                            {% else %}
+
+                                <span>
+                                    Vence el
+                                    {{ item.task.due_date|date:"d M Y" }}
+                                </span>
+
+                            {% endif %}
+
+                        {% else %}
+
+                            <span>
+                                Sin fecha límite
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
 
             </div>
 
-            <span class="task-status">
-                {{ task.get_status_display }}
+
+
+            <!-- HOURS -->
+
+            <div class="task-dashboard-hours">
+
+                <span>
+                    Horas
+                </span>
+
+                <strong>
+                    {{ item.task.actual_hours|floatformat:1 }}h
+                    <small>
+                        /
+                        {{ item.task.estimated_hours|floatformat:1 }}h
+                    </small>
+                </strong>
+
+            </div>
+
+
+
+            <!-- PROGRESS -->
+
+            <div class="task-dashboard-progress">
+
+                <span>
+                    Progreso
+                </span>
+
+                <strong>
+                    {{ item.progress_percent }}%
+                </strong>
+
+
+                <div class="task-list-progress-track">
+
+                    <div
+                        class="task-list-progress-fill"
+                        style="
+                            width:
+                            {{ item.progress_percent }}%;
+                        "
+                    ></div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- STATUS -->
+
+            <div class="task-dashboard-status">
+
+                <span
+                    class="
+                        task-status-pill
+                        status-{{ item.task.status|lower }}
+                    "
+                >
+                    {{ item.task.get_status_display }}
+                </span>
+
+            </div>
+
+
+        </article>
+
+
+    {% empty %}
+
+        <div class="task-list-empty">
+
+            <strong>
+                No hay tareas aquí.
+            </strong>
+
+            <span>
+                Prueba otro filtro o crea una nueva.
             </span>
 
-        </a>
+        </div>
 
     {% endfor %}
 
 </div>
+
+
+
+<div class="task-list-footer">
+
+    <span></span>
+
+    <p>
+        Mostrando
+        {{ task_rows|length }}
+        de
+        {{ total_tasks }}
+        tareas
+    </p>
+
+    <span></span>
+
+</div>
+
 
 {% endblock %}

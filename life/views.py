@@ -235,7 +235,6 @@ def plan_list(request):
 
 
 
-
 @login_required
 def plan_detail(request, pk):
     plan = get_object_or_404(
@@ -244,19 +243,135 @@ def plan_detail(request, pk):
         life_area__user=request.user,
     )
 
-    tasks = plan.tasks.all().distinct()
+    tasks = (
+        plan.tasks
+        .all()
+        .distinct()
+        .prefetch_related("impacts")
+        .order_by("status", "due_date", "name")
+    )
 
-    tracking = plan.weekly_tracking.all().order_by("-week")
+    tracking = (
+        plan.weekly_tracking
+        .select_related("week")
+        .all()
+        .order_by("-week__week_start")
+    )
+
+    # =========================
+    # RESUMEN DEL PLAN
+    # =========================
+
+    total_tasks = tasks.count()
+
+    completed_tasks = tasks.filter(
+        status=Task.Status.COMPLETED
+    ).count()
+
+    total_actual_hours = sum(
+        (
+            task.actual_hours or Decimal("0")
+            for task in tasks
+        ),
+        Decimal("0"),
+    )
+
+    remaining_hours = max(
+        Decimal("0"),
+        (plan.estimated_hours or Decimal("0"))
+        - total_actual_hours,
+    )
+
+    today = date.today()
+
+    days_remaining = None
+
+    if plan.target_date:
+        days_remaining = (
+            plan.target_date - today
+        ).days
+
+    # =========================
+    # INFO DETALLADA DE TAREAS
+    # =========================
+
+    task_rows = []
+
+    for task in tasks:
+
+        impact = (
+            task.impacts
+            .filter(plan=plan)
+            .first()
+        )
+
+        estimated = (
+            task.estimated_hours
+            or Decimal("0")
+        )
+
+        actual = (
+            task.actual_hours
+            or Decimal("0")
+        )
+
+        task_remaining = max(
+            Decimal("0"),
+            estimated - actual,
+        )
+
+        if estimated > 0:
+            time_progress = min(
+                Decimal("100"),
+                (
+                    actual
+                    / estimated
+                    * Decimal("100")
+                ),
+            )
+        else:
+            time_progress = Decimal("0")
+
+        if task.status == Task.Status.COMPLETED:
+            time_progress = Decimal("100")
+
+        task_rows.append({
+            "task": task,
+
+            "impact": (
+                impact.impact_percent
+                if impact
+                else Decimal("0")
+            ),
+
+            "remaining_hours": task_remaining,
+
+            "time_progress": time_progress,
+        })
+
+    context = {
+        "plan": plan,
+
+        "tasks": tasks,
+        "task_rows": task_rows,
+
+        "tracking": tracking,
+
+        "total_tasks": total_tasks,
+        "completed_tasks": completed_tasks,
+
+        "total_actual_hours": total_actual_hours,
+        "remaining_hours": remaining_hours,
+
+        "days_remaining": days_remaining,
+    }
 
     return render(
         request,
         "life/plan_detail.html",
-        {
-            "plan": plan,
-            "tasks": tasks,
-            "tracking": tracking,
-        },
+        context,
     )
+
 
 @login_required
 def plan_edit(request, pk):
@@ -297,21 +412,222 @@ def plan_edit(request, pk):
         },
     )
 
-
 @login_required
 def task_list(request):
-    tasks = (
+
+    today = date.today()
+
+    # =========================================
+    # BASE
+    # =========================================
+
+    base_tasks = (
         Task.objects
-        .filter(plans__life_area__user=request.user)
-        .prefetch_related("plans")
+        .filter(
+            plans__life_area__user=request.user
+        )
+        .prefetch_related(
+            "plans",
+            "plans__life_area",
+        )
         .distinct()
-        .order_by("status", "due_date")
     )
+
+    # =========================================
+    # ESTADÍSTICAS
+    # =========================================
+
+    total_tasks = base_tasks.count()
+
+    in_progress_tasks = base_tasks.filter(
+        status=Task.Status.IN_PROGRESS
+    ).count()
+
+    completed_tasks = base_tasks.filter(
+        status=Task.Status.COMPLETED
+    ).count()
+
+    pending_tasks = base_tasks.filter(
+        status=Task.Status.PENDING
+    ).count()
+
+    urgent_limit = (
+        today + timedelta(days=3)
+    )
+
+    urgent_tasks = (
+        base_tasks
+        .exclude(
+            status__in=[
+                Task.Status.COMPLETED,
+                Task.Status.CANCELLED,
+            ]
+        )
+        .filter(
+            due_date__isnull=False,
+            due_date__lte=urgent_limit,
+        )
+        .count()
+    )
+
+    # =========================================
+    # FILTROS
+    # =========================================
+
+    current_filter = request.GET.get(
+        "filter",
+        "all",
+    )
+
+    tasks = base_tasks
+
+    if current_filter == "today":
+
+        tasks = tasks.filter(
+            due_date=today
+        )
+
+    elif current_filter == "week":
+
+        end_of_week = (
+            today
+            + timedelta(
+                days=6 - today.weekday()
+            )
+        )
+
+        tasks = tasks.filter(
+            due_date__gte=today,
+            due_date__lte=end_of_week,
+        )
+
+    elif current_filter == "completed":
+
+        tasks = tasks.filter(
+            status=Task.Status.COMPLETED
+        )
+
+    # =========================================
+    # ORDEN
+    # =========================================
+
+    current_sort = request.GET.get(
+        "sort",
+        "recent",
+    )
+
+    if current_sort == "deadline":
+
+        tasks = tasks.order_by(
+            "due_date",
+            "name",
+        )
+
+    elif current_sort == "name":
+
+        tasks = tasks.order_by(
+            "name"
+        )
+
+    else:
+
+        tasks = tasks.order_by(
+            "-created_at"
+        )
+
+    # =========================================
+    # DATOS VISUALES
+    # =========================================
+
+    task_rows = []
+
+    for task in tasks:
+
+        estimated = Decimal(
+            str(
+                task.estimated_hours
+                or 0
+            )
+        )
+
+        actual = Decimal(
+            str(
+                task.actual_hours
+                or 0
+            )
+        )
+
+        if estimated > 0:
+
+            progress = (
+                actual
+                / estimated
+                * Decimal("100")
+            )
+
+            progress = min(
+                progress,
+                Decimal("100"),
+            )
+
+        else:
+
+            progress = Decimal("0")
+
+        if (
+            task.status
+            == Task.Status.COMPLETED
+        ):
+            progress = Decimal("100")
+
+        is_overdue = bool(
+            task.due_date
+            and task.due_date < today
+            and task.status
+            not in [
+                Task.Status.COMPLETED,
+                Task.Status.CANCELLED,
+            ]
+        )
+
+        is_urgent = bool(
+            task.due_date
+            and task.due_date <= urgent_limit
+            and task.status
+            not in [
+                Task.Status.COMPLETED,
+                Task.Status.CANCELLED,
+            ]
+        )
+
+        task_rows.append({
+            "task": task,
+
+            "progress_percent":
+                round(float(progress)),
+
+            "is_urgent": is_urgent,
+
+            "is_overdue": is_overdue,
+        })
+
+    context = {
+        "task_rows": task_rows,
+
+        "total_tasks": total_tasks,
+        "in_progress_tasks": in_progress_tasks,
+        "completed_tasks": completed_tasks,
+        "pending_tasks": pending_tasks,
+        "urgent_tasks": urgent_tasks,
+
+        "current_filter": current_filter,
+        "current_sort": current_sort,
+    }
 
     return render(
         request,
         "life/task_list.html",
-        {"tasks": tasks},
+        context,
     )
 
 
