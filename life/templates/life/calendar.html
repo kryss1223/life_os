@@ -61,10 +61,12 @@ Planning | Life OS
 
 
                 <div class="weekly-day-tasks">
-
-                    {% for allocation in day.allocations %}
-
-                        <div class="weekly-task saved-task">
+                    <form
+                        method="POST"
+                        action="{% url 'life:allocation_update' allocation.pk %}"
+                        class="saved-allocation-editor"
+                    >
+                        {% csrf_token %}
 
                         <div class="saved-task-info">
 
@@ -72,68 +74,69 @@ Planning | Life OS
                                 {{ allocation.task.name }}
                             </strong>
 
-                            <span>
-                                {{ allocation.planned_hours|floatformat:1 }}h
-                            </span>
+                            <div class="saved-hours-editor">
+                                <input
+                                    type="number"
+                                    name="planned_hours"
+                                    value="{{ allocation.planned_hours }}"
+                                    min="0.5"
+                                    step="0.5"
+                                >
+
+                                <span>h</span>
+                            </div>
 
                         </div>
 
 
                         <div class="allocation-actions">
 
-                            <form
-                                method="POST"
-                                action="{% url 'life:allocation_move' allocation.pk %}"
+                            <select name="planned_date">
+
+                                {% for target_day in saved_schedule %}
+
+                                    <option
+                                        value="{{ target_day.date|date:'Y-m-d' }}"
+                                        {% if target_day.date == allocation.planned_date %}
+                                            selected
+                                        {% endif %}
+                                    >
+                                        {{ target_day.name }}
+                                    </option>
+
+                                {% endfor %}
+
+                            </select>
+
+
+                            <button
+                                type="submit"
+                                class="allocation-save"
+                                title="Guardar cambios"
                             >
-
-                                {% csrf_token %}
-
-                                <select
-                                    name="planned_date"
-                                    onchange="this.form.submit()"
-                                >
-
-                                    {% for target_day in saved_schedule %}
-
-                                        <option
-                                            value="{{ target_day.date|date:'Y-m-d' }}"
-
-                                            {% if target_day.date == allocation.planned_date %}
-                                                selected
-                                            {% endif %}
-                                        >
-                                            {{ target_day.name }}
-                                        </option>
-
-                                    {% endfor %}
-
-                                </select>
-
-                            </form>
-
-
-                            <form
-                                method="POST"
-                                action="{% url 'life:allocation_remove' allocation.pk %}"
-                            >
-
-                                {% csrf_token %}
-
-                                <button
-                                    type="submit"
-                                    class="allocation-remove"
-                                    title="Quitar de esta semana"
-                                >
-                                    ×
-                                </button>
-
-                            </form>
+                                ✓
+                            </button>
 
                         </div>
 
-                    </div>
+                    </form>
 
-                    {% endfor %}
+
+                    <form
+                        method="POST"
+                        action="{% url 'life:allocation_remove' allocation.pk %}"
+                    >
+                        {% csrf_token %}
+
+                        <button
+                            type="submit"
+                            class="allocation-remove"
+                            title="Quitar del calendario"
+                        >
+                            ×
+                        </button>
+                    </form>
+                        
 
                 </div>
 

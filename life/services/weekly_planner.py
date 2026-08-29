@@ -244,7 +244,22 @@ def build_weekly_plan(
     include_saturday=False,
     include_sunday=False,
     selected_task_ids=None,
+    planning_week_start=None,
 ):
+    today = date.today()
+
+    if planning_week_start is None:
+        planning_week_start = (
+            today
+            - timedelta(days=today.weekday())
+        )
+
+    # Si planificamos esta semana, calculamos desde hoy.
+    # Si es una semana futura, desde su lunes.
+    reference_date = max(
+        today,
+        planning_week_start,
+    )
     available_hours = Decimal(
         str(available_hours)
     )
@@ -258,7 +273,8 @@ def build_weekly_plan(
     for task in tasks:
 
         load = calculate_task_weekly_load(
-            task
+            task,
+            today=reference_date,
         )
 
         if load is None:
@@ -368,13 +384,12 @@ def build_weekly_plan(
     # 7. CALENDARIO
     # -------------------------
 
-    weekly_schedule = (
-        distribute_weekly_schedule(
-            selected_loads,
-            available_hours,
-            include_saturday=include_saturday,
-            include_sunday=include_sunday,
-        )
+    weekly_schedule = distribute_weekly_schedule(
+        selected_loads,
+        available_hours,
+        include_saturday=include_saturday,
+        include_sunday=include_sunday,
+        planning_week_start=planning_week_start,
     )
 
     return {
@@ -393,14 +408,17 @@ def distribute_weekly_schedule(
     available_hours,
     include_saturday=False,
     include_sunday=False,
+    planning_week_start=None,
     today=None,
 ):
     today = today or date.today()
 
-    monday = (
-        today
-        - timedelta(days=today.weekday())
-    )
+    if planning_week_start is None:
+        planning_week_start = (
+            today - timedelta(days=today.weekday())
+        )
+
+    monday = planning_week_start
 
     days = []
 

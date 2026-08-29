@@ -94,9 +94,18 @@ Planning | Life OS
                                     {{ allocation.task.name }}
                                 </strong>
 
-                                <span>
-                                    {{ allocation.planned_hours|floatformat:1 }}h
-                                </span>
+                                <div class="saved-hours-editor">
+                                    <input
+                                        type="number"
+                                        name="planned_hours"
+                                        value="{{ allocation.planned_hours }}"
+                                        min="0.5"
+                                        step="0.5"
+                                    >
+
+                                    <span>h</span>
+
+                                </div>
 
                             </div>
 
@@ -105,7 +114,7 @@ Planning | Life OS
 
                                 <form
                                     method="POST"
-                                    action="{% url 'life:allocation_move' allocation.pk %}"
+                                    action="{% url 'life:allocation_update' allocation.pk %}"
                                 >
 
                                     {% csrf_token %}
@@ -170,15 +179,58 @@ Planning | Life OS
 <!-- ======================== -->
 
 <section class="planner-start">
+    <div class="planner-week-selector">
 
+        <a
+            href="{% url 'life:planning' %}?week={{ previous_week_offset }}"
+            class="planner-week-arrow"
+            title="Semana anterior"
+        >
+            ‹
+        </a>
+
+
+        <div class="planner-selected-week">
+
+            {% if is_current_week %}
+                <span>ESTA SEMANA</span>
+            {% elif week_offset == 1 %}
+                <span>SEMANA SIGUIENTE</span>
+            {% else %}
+                <span>SEMANA SELECCIONADA</span>
+            {% endif %}
+
+            <strong>
+                {{ week_start|date:"d M" }}
+                —
+                {{ week_end|date:"d M" }}
+            </strong>
+
+        </div>
+
+
+        <a
+            href="{% url 'life:planning' %}?week={{ next_week_offset }}"
+            class="planner-week-arrow"
+            title="Semana siguiente"
+        >
+            ›
+        </a>
+
+    </div>
     <div class="planner-start-heading">
         <span class="eyebrow">
             WEEKLY PLANNER
         </span>
 
-        <h2>
-            COORDINA TU SEMANA
-        </h2>
+        {% if can_plan_week %}
+            <h2>COORDINA TU SEMANA</h2>
+        {% else %}
+            <div class="planner-warning">
+                Esta semana ya ha terminado.
+                Puedes consultar su calendario, pero no regenerarlo.
+            </div>
+        {% endif %}
     </div>
 
 
@@ -248,7 +300,11 @@ Planning | Life OS
 
             </div>
 
-
+            <input
+                type="hidden"
+                name="week_offset"
+                value="{{ week_offset }}"
+            >
             <button
                 type="submit"
                 class="planner-generate-button"
@@ -444,7 +500,11 @@ Planning | Life OS
 
                     </div>
 
-
+                    <input
+                        type="hidden"
+                        name="week_offset"
+                        value="{{ week_offset }}"
+                    >
                     <!-- CHECK -->
 
                     <label
@@ -534,7 +594,8 @@ Planning | Life OS
     </div>
 
 
-    <div class="weekly-calendar">
+    <div class="weekly-calendar">´
+        
 
         {% for day in planner_result.schedule %}
 
@@ -595,18 +656,8 @@ Planning | Life OS
             </article>
 
         {% endfor %}
-
+            
     </div>
-
-    <button
-        type="submit"
-        name="action"
-        value="save"
-        class="planner-outline-button"
-    >
-        FIJAR CALENDARIO
-    </button>
-
 </section>
 
 {% endif %}

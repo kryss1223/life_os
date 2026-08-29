@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render,redirect,get_object_or_404
-
+from django.urls import reverse
 
 from django.db.models import Avg, Sum
 from datetime import date, timedelta
@@ -825,9 +825,44 @@ def planning(request):
 
     today = date.today()
 
+    current_week_start = (
+        today - timedelta(days=today.weekday())
+    )
+
+    # GET cuando navegas con las flechas.
+    # POST cuando Generas / Actualizas / Fijas.
+    raw_week_offset = (
+        request.POST.get("week_offset")
+        if request.method == "POST"
+        else request.GET.get("week", "0")
+    )
+
+    try:
+        week_offset = int(raw_week_offset)
+    except (TypeError, ValueError):
+        week_offset = 0
+
+    # Evitamos offsets absurdos accidentalmente.
+    week_offset = max(-52, min(52, week_offset))
+
     week_start = (
-            today - timedelta(days=today.weekday())
-        )
+        current_week_start
+        + timedelta(weeks=week_offset)
+    )
+
+    week_end = (
+        week_start
+        + timedelta(days=6)
+    )
+
+    previous_week_offset = week_offset - 1
+    next_week_offset = week_offset + 1
+
+    is_current_week = week_offset == 0
+
+    # Las anteriores se pueden consultar,
+    # pero no tiene sentido optimizarlas.
+    can_plan_week = week_end >= today
 
     current_week = Week.objects.filter(
             user=request.user,
@@ -969,6 +1004,7 @@ def planning(request):
                 include_saturday=include_saturday,
                 include_sunday=include_sunday,
                 selected_task_ids=selected_task_ids,
+                planning_week_start=week_start,
             )
 
             with transaction.atomic():
@@ -1021,6 +1057,7 @@ def planning(request):
             include_saturday=include_saturday,
             include_sunday=include_sunday,
             selected_task_ids=selected_task_ids,
+            planning_week_start=week_start,
         )
 
 
@@ -1062,7 +1099,9 @@ def planning(request):
                             planned_hours=item["hours"],
                         )
 
-            return redirect("life:planning")
+            return redirect(
+                f"{reverse('life:planning')}?week={week_offset}"
+            )
     context = {
         "year": year,
         "previous_year": year - 1,
@@ -1087,6 +1126,16 @@ def planning(request):
         "fixed_allocations": fixed_allocations,
 
         "saved_schedule": saved_schedule,
+
+        "week_offset": week_offset,
+        "previous_week_offset": previous_week_offset,
+        "next_week_offset": next_week_offset,
+
+        "week_start": week_start,
+        "week_end": week_end,
+
+        "is_current_week": is_current_week,
+        "can_plan_week": can_plan_week,
     }
 
     return render(
@@ -1157,15 +1206,110 @@ def allocation_move(request, pk):
     return redirect("life:planning")
 
 @login_required
-def allocation_remove(request, pk):
-
+def allocation_update(request, pk):
     allocation = get_object_or_404(
         WeeklyTaskAllocation,
         pk=pk,
         week__user=request.user,
     )
 
+    if request.method != "POST":
+        return redirect("life:planning")
+
+    new_date_raw = request.POST.get("planned_date")
+    new_hours_raw = request.POST.get("planned_hours")
+
+    try:
+        new_date = date.fromisoformat(new_date_raw)
+        new_hours = Decimal(new_hours_raw)
+
+    except (TypeError, ValueError, InvalidOperation):
+        return redirect("life:planning")
+
+    # Bloque mínimo del calendario
+    if new_hours < Decimal("0.5"):
+        new_hours = Decimal("0.5")
+
+    monday = allocation.week.week_start
+    sunday = monday + timedelta(days=6)
+
+    # No permitir sacar la tarea de su semana
+    if not monday <= new_date <= sunday:
+        return redirect("life:planning")
+
+    existing = (
+        WeeklyTaskAllocation.objects
+        .filter(
+            week=allocation.week,
+            task=allocation.task,
+            planned_date=new_date,
+        )
+        .exclude(pk=allocation.pk)
+        .first()
+    )
+
+    with transaction.atomic():
+
+        if existing:
+            # Si la mueves encima de otra asignación
+            # de la misma tarea, las fusionamos.
+            existing.planned_hours += new_hours
+
+            existing.save(
+                update_fields=["planned_hours"]
+            )
+
+            allocation.delete()
+
+        else:
+            allocation.planned_date = new_date
+            allocation.planned_hours = new_hours
+
+            allocation.save(
+                update_fields=[
+                    "planned_date",
+                    "planned_hours",
+                ]
+            )
+
+    # Volver a la semana que estábamos editando
+    current_monday = (
+        date.today()
+        - timedelta(days=date.today().weekday())
+    )
+
+    week_offset = (
+        allocation.week.week_start
+        - current_monday
+    ).days // 7
+
+    return redirect(
+        f"{reverse('life:planning')}?week={week_offset}"
+    )
+
+
+@login_required
+def allocation_remove(request, pk):
+    allocation = get_object_or_404(
+        WeeklyTaskAllocation,
+        pk=pk,
+        week__user=request.user,
+    )
+
+    week_start = allocation.week.week_start
+
     if request.method == "POST":
         allocation.delete()
 
-    return redirect("life:planning")
+    current_monday = (
+        date.today()
+        - timedelta(days=date.today().weekday())
+    )
+
+    week_offset = (
+        week_start - current_monday
+    ).days // 7
+
+    return redirect(
+        f"{reverse('life:planning')}?week={week_offset}"
+    )

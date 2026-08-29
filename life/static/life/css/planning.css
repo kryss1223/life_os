@@ -1261,3 +1261,119 @@
     }
 
 }
+/* =========================================
+   WEEK SELECTOR
+========================================= */
+
+.planner-week-selector {
+    width: fit-content;
+
+    display: flex;
+    align-items: center;
+
+    gap: 18px;
+
+    margin-bottom: 28px;
+
+    padding: 8px 12px;
+
+    background: #242425;
+
+    border: 1px dotted #777;
+    border-radius: 999px;
+}
+
+
+.planner-week-arrow {
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    color: #ddd;
+
+    font-size: 27px;
+    text-decoration: none;
+
+    transition: 0.15s ease;
+}
+
+
+.planner-week-arrow:hover {
+    background: #313134;
+    color: #58d7df;
+}
+
+
+.planner-selected-week {
+    min-width: 165px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 3px;
+}
+
+
+.planner-selected-week span {
+    color: #58d7df;
+
+    font-size: 8px;
+    font-weight: 800;
+
+    letter-spacing: 1.2px;
+}
+
+
+.planner-selected-week strong {
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+.saved-hours-editor {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+
+    flex-shrink: 0;
+}
+
+.saved-hours-editor input {
+    width: 42px;
+
+    padding: 3px 4px;
+
+    background: #202024;
+    color: #aaa;
+
+    border: 1px solid #35353a;
+    border-radius: 5px;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    text-align: right;
+}
+
+.saved-hours-editor span {
+    font-size: 10px;
+    color: #777;
+}
+
+.allocation-save {
+    width: 30px;
+    height: 30px;
+
+    border: 1px solid #35353a;
+    border-radius: 6px;
+
+    background: #202024;
+    color: #58d7df;
+
+    cursor: pointer;
+}

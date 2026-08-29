@@ -40,10 +40,10 @@ urlpatterns = [
     ),
 
     path(
-        "planning/allocation/<int:pk>/move/",
-        views.allocation_move,
-        name="allocation_move",
-    ),
+    "planning/allocation/<int:pk>/update/",
+    views.allocation_update,
+    name="allocation_update",
+),
 
     path(
         "planning/allocation/<int:pk>/remove/",
