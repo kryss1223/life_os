@@ -21,7 +21,7 @@ from .models import (
     WeeklyTracking,
     WeeklyTaskAllocation,
 )
-
+from decimal import Decimal, InvalidOperation
 from .forms import WeeklyPlannerForm
 from .services.weekly_planner import build_weekly_plan
 
@@ -849,135 +849,220 @@ def planning(request):
         if current_week
         else WeeklyTaskAllocation.objects.none()
     )
+    allocations_by_date = defaultdict(list)
+
+    for allocation in fixed_allocations:
+        allocations_by_date[
+            allocation.planned_date
+        ].append(allocation)
+
     saved_schedule = []
 
-    if current_week:
+    day_names = [
+        "Lunes",
+        "Martes",
+        "Miércoles",
+        "Jueves",
+        "Viernes",
+        "Sábado",
+        "Domingo",
+    ]
+    for index in range(7):
+        current_date = (
+            week_start + timedelta(days=index)
+        )
 
-        monday = current_week.week_start
-
-        allocations_by_date = defaultdict(list)
-
-        for allocation in fixed_allocations:
-            allocations_by_date[
-                allocation.planned_date
-            ].append(allocation)
-
-        for index in range(7):
-
-            current_date = (
-                monday + timedelta(days=index)
-            )
-
-            saved_schedule.append({
-                "date": current_date,
-                "name": [
-                    "Lunes",
-                    "Martes",
-                    "Miércoles",
-                    "Jueves",
-                    "Viernes",
-                    "Sábado",
-                    "Domingo",
-                ][index],
-                "allocations":
-                    allocations_by_date.get(
-                        current_date,
-                        [],
-                    ),
-            })
+        saved_schedule.append({
+            "date": current_date,
+            "name": day_names[index],
+            "allocations": allocations_by_date.get(
+                current_date,
+                [],
+            ),
+        })
 
 
     planner_form = WeeklyPlannerForm(
-            request.POST or None
-        )
+        request.POST or None
+    )
 
     planner_result = None
 
 
     if (
-            request.method == "POST"
-            and planner_form.is_valid()
-        ):
-            available_hours = (
-                planner_form.cleaned_data["available_hours"]
-            )
+        request.method == "POST"
+        and planner_form.is_valid()
+    ):
 
-            include_saturday = (
-                planner_form.cleaned_data["include_saturday"]
-            )
+        action = request.POST.get(
+            "action",
+            "calculate",
+        )
 
-            include_sunday = (
-                planner_form.cleaned_data["include_sunday"]
-            )
+        available_hours = (
+            planner_form.cleaned_data[
+                "available_hours"
+            ]
+        )
 
-            planner_tasks = (
-                Task.objects
-                .filter(
-                    plans__life_area__user=request.user,
-                    due_date__isnull=False,
+        exclude_saturday = (
+            planner_form.cleaned_data[
+                "exclude_saturday"
+            ]
+        )
+
+        exclude_sunday = (
+            planner_form.cleaned_data[
+                "exclude_sunday"
+            ]
+        )
+
+        include_saturday = (
+            not exclude_saturday
+        )
+
+        include_sunday = (
+            not exclude_sunday
+        )
+
+
+        planner_tasks = (
+            Task.objects
+            .filter(
+                plans__life_area__user=request.user,
+                due_date__isnull=False,
+            )
+            .exclude(
+                status__in=[
+                    Task.Status.COMPLETED,
+                    Task.Status.CANCELLED,
+                ]
+            )
+            .distinct()
+            .order_by(
+                "due_date",
+                "name",
+            )
+        )
+
+
+        # =====================================
+        # ACTUALIZAR DATOS DE LA PROPUESTA
+        # =====================================
+
+        selected_task_ids = None
+
+        if action in {
+            "update_plan",
+            "save",
+        }:
+            selected_task_ids = {
+                int(task_id)
+                for task_id
+                in request.POST.getlist(
+                    "selected_tasks"
                 )
-                .exclude(
-                    status__in=[
-                        Task.Status.COMPLETED,
-                        Task.Status.CANCELLED,
-                    ]
-                )
-                .distinct()
-            )
-
+            }
             planner_result = build_weekly_plan(
                 planner_tasks,
                 available_hours,
                 include_saturday=include_saturday,
                 include_sunday=include_sunday,
+                selected_task_ids=selected_task_ids,
             )
 
-            action = request.POST.get("action")
+            with transaction.atomic():
 
-            if action == "save":
+                for task in planner_tasks:
 
-                week, created = Week.objects.get_or_create(
+                    raw_hours = request.POST.get(
+                        f"actual_add_{task.pk}",
+                        "",
+                    ).strip()
+
+                    if not raw_hours:
+                        continue
+
+                    try:
+                        added_hours = Decimal(
+                            raw_hours
+                        )
+
+                    except InvalidOperation:
+                        continue
+
+                    if added_hours <= 0:
+                        continue
+
+                    task.actual_hours = (
+                        Decimal(
+                            str(
+                                task.actual_hours
+                                or 0
+                            )
+                        )
+                        + added_hours
+                    )
+
+                    task.save(
+                        update_fields=[
+                            "actual_hours"
+                        ]
+                    )
+
+
+        # =====================================
+        # RECALCULAR
+        # =====================================
+
+        planner_result = build_weekly_plan(
+            planner_tasks,
+            available_hours,
+            include_saturday=include_saturday,
+            include_sunday=include_sunday,
+            selected_task_ids=selected_task_ids,
+        )
+
+
+        # =====================================
+        # FIJAR CALENDARIO
+        # =====================================
+
+        if action == "save":
+
+            week, created = (
+                Week.objects.get_or_create(
                     user=request.user,
                     week_start=week_start,
                 )
+            )
 
-                week.available_hours = available_hours
+            week.available_hours = (
+                available_hours
+            )
 
-                # Si ya añadiste PlanningMode:
-                week.planning_mode = (
-                    Week.PlanningMode.OPTIMIZED
-                )
+            week.planning_mode = (
+                Week.PlanningMode.OPTIMIZED
+            )
 
-                week.save()
+            week.save()
 
-                # IDs que forman parte de esta planificación
-                with transaction.atomic():
+            with transaction.atomic():
 
-                    # Sustituimos la planificación anterior
-                    # de esta semana por la nueva
-                    week.task_allocations.all().delete()
+                week.task_allocations.all().delete()
 
-                    for day in planner_result["schedule"]:
+                for day in planner_result["schedule"]:
 
-                        for item in day["tasks"]:
+                    for item in day["tasks"]:
 
-                            WeeklyTaskAllocation.objects.create(
-                                week=week,
-                                task=item["task"],
-                                planned_date=day["date"],
-                                planned_hours=item["hours"],
-                            )
+                        WeeklyTaskAllocation.objects.create(
+                            week=week,
+                            task=item["task"],
+                            planned_date=day["date"],
+                            planned_hours=item["hours"],
+                        )
 
-                return redirect("life:planning")
-
-            include_saturday = planner_form.cleaned_data[
-                "include_saturday"
-            ]
-
-            include_sunday = planner_form.cleaned_data[
-                "include_sunday"
-            ]
-
+            return redirect("life:planning")
     context = {
         "year": year,
         "previous_year": year - 1,

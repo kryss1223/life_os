@@ -26,20 +26,42 @@ Planning | Life OS
     </p>
 
 </header>
-{% if saved_schedule %}
 
-<section>
+<!-- ======================== -->
+<!-- SEMANA ACTUAL -->
+<!-- ======================== -->
 
-    <div class="section-title">
-        <span class="eyebrow">
-            THIS WEEK
-        </span>
+<section class="planner-week-board">
 
-        <h2>Mi semana</h2>
+    <div class="planner-week-heading">
+
+        <div>
+            <span class="eyebrow">
+                THIS WEEK
+            </span>
+
+            <h2>
+                CALENDARIO SEMANAL
+            </h2>
+        </div>
+
+
+        <div class="planner-week-actions">
+
+            <a
+                href="{% url 'life:task_create' %}"
+                class="planner-outline-button"
+            >
+                AÑADIR TAREA
+            </a>
+
+
+        </div>
+
     </div>
 
 
-    <div class="weekly-calendar">
+    <div class="weekly-calendar planner-week-grid">
 
         {% for day in saved_schedule %}
 
@@ -66,72 +88,71 @@ Planning | Life OS
 
                         <div class="weekly-task saved-task">
 
-                        <div class="saved-task-info">
+                            <div class="saved-task-info">
 
-                            <strong>
-                                {{ allocation.task.name }}
-                            </strong>
+                                <strong>
+                                    {{ allocation.task.name }}
+                                </strong>
 
-                            <span>
-                                {{ allocation.planned_hours|floatformat:1 }}h
-                            </span>
+                                <span>
+                                    {{ allocation.planned_hours|floatformat:1 }}h
+                                </span>
 
-                        </div>
+                            </div>
 
 
-                        <div class="allocation-actions">
+                            <div class="allocation-actions">
 
-                            <form
-                                method="POST"
-                                action="{% url 'life:allocation_move' allocation.pk %}"
-                            >
-
-                                {% csrf_token %}
-
-                                <select
-                                    name="planned_date"
-                                    onchange="this.form.submit()"
+                                <form
+                                    method="POST"
+                                    action="{% url 'life:allocation_move' allocation.pk %}"
                                 >
 
-                                    {% for target_day in saved_schedule %}
+                                    {% csrf_token %}
 
-                                        <option
-                                            value="{{ target_day.date|date:'Y-m-d' }}"
+                                    <select
+                                        name="planned_date"
+                                        onchange="this.form.submit()"
+                                    >
 
-                                            {% if target_day.date == allocation.planned_date %}
-                                                selected
-                                            {% endif %}
-                                        >
-                                            {{ target_day.name }}
-                                        </option>
+                                        {% for target_day in saved_schedule %}
 
-                                    {% endfor %}
+                                            <option
+                                                value="{{ target_day.date|date:'Y-m-d' }}"
+                                                {% if target_day.date == allocation.planned_date %}
+                                                    selected
+                                                {% endif %}
+                                            >
+                                                {{ target_day.name }}
+                                            </option>
 
-                                </select>
+                                        {% endfor %}
 
-                            </form>
+                                    </select>
+
+                                </form>
 
 
-                            <form
-                                method="POST"
-                                action="{% url 'life:allocation_remove' allocation.pk %}"
-                            >
-
-                                {% csrf_token %}
-
-                                <button
-                                    type="submit"
-                                    class="allocation-remove"
-                                    title="Quitar de esta semana"
+                                <form
+                                    method="POST"
+                                    action="{% url 'life:allocation_remove' allocation.pk %}"
                                 >
-                                    ×
-                                </button>
 
-                            </form>
+                                    {% csrf_token %}
+
+                                    <button
+                                        type="submit"
+                                        class="allocation-remove"
+                                        title="Quitar de esta semana"
+                                    >
+                                        ×
+                                    </button>
+
+                                </form>
+
+                            </div>
 
                         </div>
-
-                    </div>
 
                     {% endfor %}
 
@@ -144,180 +165,364 @@ Planning | Life OS
     </div>
 
 </section>
+<!-- ======================== -->
+<!-- WEEKLY PLANNER -->
+<!-- ======================== -->
 
+<section class="planner-start">
 
+    <div class="planner-start-heading">
+        <span class="eyebrow">
+            WEEKLY PLANNER
+        </span>
 
-{% endif %}
-<section class="weekly-planner">
-
-    <div class="section-title">
-        <span class="eyebrow">WEEKLY PLANNER</span>
-        <h2>¿Cuánto tiempo tienes esta semana?</h2>
+        <h2>
+            COORDINA TU SEMANA
+        </h2>
     </div>
 
-    <form method="POST" class="planner-card">
+
+    <form
+        method="POST"
+        class="planner-control-card"
+    >
+
         {% csrf_token %}
 
-        <input type="hidden" name="action" value="calculate">
+        <input
+            type="hidden"
+            name="action"
+            value="calculate"
+        >
 
-        <div class="planner-hours">
+
+        <!-- HORAS -->
+
+        <div class="planner-slider-row">
+
             <span>0h</span>
+
             {{ planner_form.available_hours }}
+
             <span>84h</span>
+
         </div>
 
-        <strong class="planner-value">
+
+        <strong class="planner-hours-value">
             <span id="hours-value">
                 {{ planner_form.available_hours.value|default:20 }}
             </span>h disponibles
         </strong>
-        <div class="planner-days">
 
-            <span>Días disponibles:</span>
 
-            <label>
-                {{ planner_form.include_saturday }}
-                Sábado
-            </label>
+        <!-- CONTROLES -->
 
-            <label>
-                {{ planner_form.include_sunday }}
-                Domingo
-            </label>
+        <div class="planner-control-bottom">
+
+            <div class="planner-unavailable">
+
+                <span class="planner-unavailable-label">
+                    Días no disponibles:
+                </span>
+
+
+                <label
+                    class="planner-day-toggle"
+                    title="Sábado"
+                >
+                    {{ planner_form.exclude_saturday }}
+
+                    <span>S</span>
+                </label>
+
+
+                <label
+                    class="planner-day-toggle"
+                    title="Domingo"
+                >
+                    {{ planner_form.exclude_sunday }}
+
+                    <span>D</span>
+                </label>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="planner-generate-button"
+            >
+                Generar
+            </button>
 
         </div>
-                <input
-            type="hidden"
-            name="include_saturday"
-            value="{% if planner_form.include_saturday.value %}on{% endif %}"
-        >
 
-        <input
-            type="hidden"
-            name="include_sunday"
-            value="{% if planner_form.include_sunday.value %}on{% endif %}"
-        >
-
-        <button type="submit" class="button">
-            Calcular mi semana
-        </button>
     </form>
 
 </section>
 
 {% if planner_result %}
 
-<form method="POST" class="save-planning-form">
-
-    {% csrf_token %}
-
-    <input
-        type="hidden"
-        name="action"
-        value="save"
-    >
-
-    <input
-        type="hidden"
-        name="available_hours"
-        value="{{ planner_result.available_hours }}"
-    >
-
-    <button
-        type="submit"
-        class="button"
-    >
-        Fijar esta planificación
-    </button>
-
-</form>
-
-<section>
+<section class="planner-proposal">
 
     <div class="section-title">
-        <span class="eyebrow">RECOMMENDED LOAD</span>
-        <h2>Propuesta semanal</h2>
+        <span class="eyebrow">
+            RECOMMENDED LOAD
+        </span>
+
+        <h2>
+            Propuesta semanal
+        </h2>
     </div>
 
-    <div class="metric-grid">
 
-        <div class="metric-card">
-            <span>Disponibles</span>
-            <strong>
-                {{ planner_result.available_hours|floatformat:1 }}h
-            </strong>
-        </div>
+    <form
+        method="POST"
+        class="planner-update-form"
+    >
 
-        <div class="metric-card">
-            <span>Necesarias</span>
-            <strong>
-                {{ planner_result.total_needed|floatformat:1 }}h
-            </strong>
-        </div>
+        {% csrf_token %}
 
-        <div class="metric-card">
-            <span>Margen</span>
-            <strong>
-                {{ planner_result.remaining_capacity|floatformat:1 }}h
-            </strong>
-        </div>
+        <button
+            type="submit"
+            name="action"
+            value="save"
+            class="planner-outline-button"
+        >
+            FIJAR CALENDARIO
+        </button>
 
-    </div>
+        <input
+            type="hidden"
+            name="available_hours"
+            value="{{ planner_result.available_hours }}"
+        >
+        
 
-    {% if planner_result.overloaded %}
-        <div class="planner-warning">
-            ⚠ No tienes suficientes horas esta semana para mantener
-            el ritmo necesario de todos los deadlines.
-        </div>
-    {% endif %}
+        {% if planner_form.exclude_saturday.value %}
+            <input
+                type="hidden"
+                name="exclude_saturday"
+                value="on"
+            >
+        {% endif %}
 
-    <div class="plans">
+        {% if planner_form.exclude_sunday.value %}
+            <input
+                type="hidden"
+                name="exclude_sunday"
+                value="on"
+            >
+        {% endif %}
 
-        {% for item in planner_result.tasks %}
 
-            <div class="plan planner-task {{ item.urgency }}">
+        <!-- ====================== -->
+        <!-- MÉTRICAS -->
+        <!-- ====================== -->
 
-                <div>
-                    <h3>
-                        {{ item.task.name }}
+        <div class="metric-grid">
 
-                        <span class="urgency-badge {{ item.urgency }}">
-                            {{ item.urgency_label }}
-                        </span>
-                    </h3>
+            <div class="metric-card">
+                <span>Disponibles</span>
 
-                    <span class="plan-area">
-                        Quedan
-                        {{ item.remaining_hours|floatformat:1 }}h
-                        ·
-                        {{ item.weeks_remaining }} semanas
-                    </span>
-                </div>
-
-                <div class="plan-progress">
-
-                    <strong>
-                        {{ item.weekly_hours_needed|floatformat:1 }}h
-                        esta semana
-                    </strong>
-
-                    <span>
-                        {{ item.capacity_percent|floatformat:1 }}%
-                        de tu capacidad
-                    </span>
-
-                </div>
-
+                <strong>
+                    {{ planner_result.available_hours|floatformat:1 }}h
+                </strong>
             </div>
 
-        {% empty %}
 
-            <p>No hay tareas pendientes con deadline.</p>
+            <div class="metric-card">
+                <span>Necesarias</span>
 
-        {% endfor %}
+                <strong>
+                    {{ planner_result.total_needed|floatformat:1 }}h
+                </strong>
+            </div>
 
-    </div>
-        <div class="section-title weekly-calendar-title">
+
+            <div class="metric-card">
+                <span>Margen</span>
+
+                <strong>
+                    {{ planner_result.remaining_capacity|floatformat:1 }}h
+                </strong>
+            </div>
+
+        </div>
+
+
+        {% if planner_result.overloaded %}
+
+            <div class="planner-warning">
+                ⚠ No tienes suficientes horas esta semana
+                para mantener el ritmo necesario de todos
+                los deadlines.
+            </div>
+
+        {% endif %}
+
+
+        <!-- ====================== -->
+        <!-- TAREAS -->
+        <!-- ====================== -->
+
+        <div class="plans planner-proposal-list">
+
+            {% for item in planner_result.tasks %}
+
+                <div
+                    class="
+                        plan
+                        planner-task
+                        planner-proposal-task
+                        {{ item.urgency }}
+                        {% if not item.selected %}
+                            planner-task-disabled
+                        {% endif %}
+                    "
+                >
+
+                    <!-- INFO -->
+
+                    <div class="planner-task-main">
+
+                        <h3>
+                            {{ item.task.name }}
+
+                            <span
+                                class="
+                                    urgency-badge
+                                    {{ item.urgency }}
+                                "
+                            >
+                                {{ item.urgency_label }}
+                            </span>
+                        </h3>
+
+
+                        <span class="plan-area">
+
+                            {{ item.actual_hours|floatformat:1 }}h realizadas
+
+                            ·
+
+                            {{ item.remaining_hours|floatformat:1 }}h restantes
+
+                            ·
+
+                            {% if item.weeks_remaining == 0 %}
+                                Vencida
+                            {% else %}
+                                Entrega en
+                                {{ item.weeks_remaining }}
+                                semana{{ item.weeks_remaining|pluralize }}
+                            {% endif %}
+
+                        </span>
+
+                    </div>
+
+
+                    <!-- AÑADIR HORAS REALES -->
+
+                    <div class="planner-actual-editor">
+
+                        <span>
+                            Actualizar horas:
+                        </span>
+
+                        <strong>+</strong>
+
+                        <input
+                            type="number"
+                            name="actual_add_{{ item.task.pk }}"
+                            min="0"
+                            step="0.5"
+                            value="0"
+                        >
+
+                    </div>
+
+
+                    <!-- CHECK -->
+
+                    <label
+                        class="planner-task-toggle"
+                        title="Incluir en el calendario"
+                    >
+
+                        <input
+                            type="checkbox"
+                            name="selected_tasks"
+                            value="{{ item.task.pk }}"
+                            {% if item.selected %}
+                                checked
+                            {% endif %}
+                        >
+
+                        <span>
+                            ✓
+                        </span>
+
+                    </label>
+
+
+                    <!-- RESULTADO -->
+
+                    <div class="plan-progress">
+
+                        <strong>
+                            {{ item.allocated_hours|floatformat:1 }}h
+                            esta semana
+                        </strong>
+
+                        <span>
+                            Ideal:
+                            {{ item.weekly_hours_needed|floatformat:1 }}h
+                            ·
+                            {{ item.capacity_percent|floatformat:1 }}%
+                            de tu capacidad
+                        </span>
+
+                    </div>
+
+                </div>
+
+            {% empty %}
+
+                <p>
+                    No hay tareas pendientes
+                    que necesiten planificación.
+                </p>
+
+            {% endfor %}
+
+        </div>
+
+
+        <div class="planner-update-actions">
+
+            <button
+            type="submit"
+            name="action"
+            value="update_plan"
+            class="planner-generate-button"
+        >
+            Actualizar
+        </button>
+
+        </div>
+
+    </form>
+
+
+    <!-- ====================== -->
+    <!-- CALENDARIO PROPUESTO -->
+    <!-- ====================== -->
+
+    <div class="section-title weekly-calendar-title">
+
         <span class="eyebrow">
             WEEK DISTRIBUTION
         </span>
@@ -325,6 +530,7 @@ Planning | Life OS
         <h2>
             Propuesta de distribución
         </h2>
+
     </div>
 
 
@@ -359,9 +565,11 @@ Planning | Life OS
 
                     {% for item in day.tasks %}
 
-                        <a
-                            href="{% url 'life:task_detail' item.task.pk %}"
-                            class="weekly-task {{ item.urgency }}"
+                        <div
+                            class="
+                                weekly-task
+                                {{ item.urgency }}
+                            "
                         >
 
                             <span>
@@ -372,7 +580,7 @@ Planning | Life OS
                                 {{ item.hours|floatformat:1 }}h
                             </strong>
 
-                        </a>
+                        </div>
 
                     {% empty %}
 
@@ -389,6 +597,15 @@ Planning | Life OS
         {% endfor %}
 
     </div>
+
+    <button
+        type="submit"
+        name="action"
+        value="save"
+        class="planner-outline-button"
+    >
+        FIJAR CALENDARIO
+    </button>
 
 </section>
 

@@ -739,4 +739,525 @@
 
     color: #ddd;
     cursor: pointer;
+}ç
+
+
+/* =========================================
+   PLANNER START
+========================================= */
+
+.planner-start {
+    max-width: 680px;
+    margin-bottom: 45px;
+}
+
+.planner-start-heading {
+    margin-bottom: 18px;
+}
+
+.planner-start-heading h2 {
+    margin-top: 4px;
+    font-size: 22px;
+}
+
+
+/* CARD */
+
+.planner-control-card {
+    padding: 24px 32px;
+
+    background: #242425;
+
+    border: 1px dotted #8a8a8a;
+    border-radius: 30px;
+}
+
+
+/* SLIDER */
+
+.planner-slider-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 40px;
+
+    align-items: center;
+    gap: 12px;
+
+    max-width: 460px;
+
+    font-size: 14px;
+}
+
+#available-hours {
+    width: 100%;
+
+    appearance: none;
+
+    height: 6px;
+
+    background: #aaa;
+    border-radius: 20px;
+
+    cursor: pointer;
+}
+
+#available-hours::-webkit-slider-thumb {
+    appearance: none;
+
+    width: 21px;
+    height: 21px;
+
+    border-radius: 50%;
+    border: none;
+
+    background: #58d7df;
+
+    cursor: pointer;
+}
+
+#available-hours::-moz-range-thumb {
+    width: 21px;
+    height: 21px;
+
+    border-radius: 50%;
+    border: none;
+
+    background: #58d7df;
+
+    cursor: pointer;
+}
+
+
+/* HORAS */
+
+.planner-hours-value {
+    display: block;
+
+    margin-top: 20px;
+
+    font-size: 17px;
+}
+
+
+/* BOTTOM */
+
+.planner-control-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 25px;
+
+    margin-top: 27px;
+}
+
+.planner-unavailable {
+    display: flex;
+    align-items: center;
+
+    gap: 14px;
+}
+
+.planner-unavailable-label {
+    font-size: 15px;
+    color: #eee;
+}
+
+
+/* DAY TOGGLES */
+
+.planner-day-toggle {
+    position: relative;
+
+    display: inline-flex;
+
+    cursor: pointer;
+}
+
+.planner-day-toggle input {
+    position: absolute;
+
+    opacity: 0;
+    pointer-events: none;
+}
+
+.planner-day-toggle span {
+    width: 43px;
+    height: 43px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 2px solid #999;
+    border-radius: 50%;
+
+    color: #ddd;
+
+    font-size: 18px;
+
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.planner-day-toggle input:checked + span {
+    border-color: #58d7df;
+
+    color: #fff;
+
+    background: rgba(88, 215, 223, 0.08);
+}
+
+
+/* GENERATE */
+
+.planner-generate-button {
+    padding: 12px 24px;
+
+    border: none;
+    border-radius: 999px;
+
+    background: #58d7df;
+    color: #080808;
+
+    font-size: 17px;
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+.planner-generate-button:hover {
+    filter: brightness(0.92);
+}
+
+
+/* =========================================
+   WEEK BOARD
+========================================= */
+
+.planner-week-board {
+    margin-bottom: 55px;
+}
+
+.planner-week-heading {
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+
+    margin-bottom: 18px;
+}
+
+.planner-week-heading h2 {
+    margin-top: 4px;
+
+    font-size: 21px;
+}
+
+.planner-week-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.planner-outline-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 42px;
+
+    padding: 0 18px;
+
+    border: 1px dotted #aaa;
+    border-radius: 999px;
+
+    background: #242425;
+    color: #f4f4f4;
+
+    text-decoration: none;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.planner-outline-button:hover {
+    background: #2d2d2f;
+}
+
+.planner-outline-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+
+/* WEEK */
+
+.planner-week-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(7, minmax(135px, 1fr));
+
+    gap: 14px;
+
+    overflow-x: auto;
+
+    padding: 0 0 10px;
+}
+
+.planner-week-grid .weekly-day {
+    min-height: 170px;
+
+    padding: 16px;
+
+    background: #242425;
+
+    border: 1px dotted #8a8a8a;
+    border-radius: 30px;
+}
+
+.planner-week-grid .weekly-day-header {
+    margin-bottom: 16px;
+}
+
+.planner-week-grid .weekly-day-header strong {
+    display: block;
+
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.planner-week-grid .weekly-day-header span {
+    color: #888;
+    font-size: 9px;
+}
+
+.planner-week-grid .weekly-day-tasks {
+    display: flex;
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 750px) {
+
+    .planner-control-card {
+        padding: 22px;
+    }
+
+    .planner-control-bottom {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .planner-unavailable {
+        flex-wrap: wrap;
+    }
+
+    .planner-generate-button {
+        width: 100%;
+    }
+
+    .planner-week-grid {
+        grid-template-columns:
+            repeat(7, minmax(155px, 1fr));
+    }
+}
+
+/* =========================================
+   PLANNER PROPOSAL
+========================================= */
+
+.planner-proposal-task {
+    display: grid;
+
+    grid-template-columns:
+        minmax(240px, 1fr)
+        auto
+        48px
+        210px;
+
+    gap: 22px;
+
+    align-items: center;
+}
+
+
+/* INFO */
+
+.planner-task-main {
+    min-width: 0;
+}
+
+.planner-task-main h3 {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+
+    gap: 4px;
+}
+
+
+/* ACTUAL HOURS */
+
+.planner-actual-editor {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 7px 10px;
+
+    background: #0f0f11;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+}
+
+.planner-actual-editor > span {
+    font-weight: 600;
+}
+
+.planner-actual-editor > strong {
+    color: #888;
+}
+
+.planner-actual-editor input {
+    width: 50px;
+
+    padding: 4px 6px;
+
+    background: #171719;
+    color: white;
+
+    border: none;
+    border-radius: 7px;
+
+    text-align: center;
+
+    font-weight: 700;
+    outline: none;
+}
+
+
+/* CHECK */
+
+.planner-task-toggle {
+    position: relative;
+
+    cursor: pointer;
+}
+
+.planner-task-toggle input {
+    position: absolute;
+
+    opacity: 0;
+    pointer-events: none;
+}
+
+.planner-task-toggle span {
+    width: 29px;
+    height: 29px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #888;
+    border-radius: 50%;
+
+    color: transparent;
+
+    transition: 0.15s ease;
+}
+
+.planner-task-toggle input:checked + span {
+    border-color: #58d7df;
+    color: #58d7df;
+}
+
+
+/* UNCHECKED */
+
+.planner-task-disabled {
+    opacity: 0.55;
+}
+
+
+/* RESULTADO */
+
+.planner-proposal-task .plan-progress {
+    width: auto;
+    min-width: 190px;
+}
+
+.planner-proposal-task .plan-progress span {
+    display: block;
+
+    text-align: right;
+
+    color: #888;
+
+    font-size: 10px;
+}
+
+
+/* UPDATE */
+
+.planner-update-actions {
+    display: flex;
+    justify-content: flex-end;
+
+    margin-top: 18px;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 950px) {
+
+    .planner-proposal-task {
+        grid-template-columns:
+            minmax(0, 1fr)
+            auto;
+    }
+
+    .planner-actual-editor {
+        justify-self: start;
+    }
+
+    .planner-proposal-task .plan-progress {
+        grid-column: 1 / -1;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .planner-proposal-task {
+        grid-template-columns:
+            minmax(0, 1fr)
+            auto;
+
+        gap: 14px;
+    }
+
+    .planner-actual-editor {
+        grid-column: 1 / -1;
+    }
+
+    .planner-proposal-task .plan-progress {
+        grid-column: 1 / -1;
+    }
+
 }
