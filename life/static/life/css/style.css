@@ -4936,17 +4936,41 @@ textarea.form-control {
     cursor: pointer;
 }
 
-
 .planning-remove-form {
-    position: absolute;
-
-    right: 6px;
-    bottom: -29px;
+    position: static;
+    display: flex;
 }
 
 
 .planning-remove-form button {
-    display: none;
+    width: 27px;
+    height: 27px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid #493034;
+    border-radius: 5px;
+
+    background: #241719;
+
+    color: #d96a73;
+
+    font-size: 13px;
+
+    cursor: pointer;
+}
+
+
+.planning-remove-form button:hover {
+    border-color: #ff5867;
+
+    background: #32191e;
+
+    color: #ff5867;
 }
 
 
