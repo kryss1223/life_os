@@ -74,8 +74,16 @@ body {
 
 @media (max-width: 750px) {
     .sidebar nav {
-        display: block;
+        display: flex;
+        flex-wrap: wrap;
         padding: 7px;
+    }
+    
+    .sidebar nav a {
+        
+        color: #999;
+        text-decoration: none;
+        border-radius: 8px;
     }
 }
 
@@ -84,6 +92,7 @@ body {
 
 .content {
     flex: 1;
+    flex-wrap: wrap;
     padding: 50px;
 }
 
