@@ -630,31 +630,178 @@ def task_list(request):
         context,
     )
 
-
 @login_required
 def task_detail(request, pk):
+
     task = get_object_or_404(
         Task.objects
-        .filter(plans__life_area__user=request.user)
+        .filter(
+            plans__life_area__user=request.user
+        )
         .distinct(),
         pk=pk,
     )
 
-    impacts = task.impacts.select_related(
-        "plan",
-        "plan__life_area",
+    # =========================================
+    # REGISTRAR HORAS
+    # =========================================
+
+    if request.method == "POST":
+
+        action = request.POST.get("action")
+
+        if action == "add_hours":
+
+            raw_hours = request.POST.get(
+                "hours_to_add",
+                "0",
+            )
+
+            try:
+                hours_to_add = Decimal(
+                    raw_hours
+                )
+
+            except InvalidOperation:
+                hours_to_add = Decimal("0")
+
+            if hours_to_add > 0:
+
+                task.actual_hours = (
+                    Decimal(
+                        str(task.actual_hours or 0)
+                    )
+                    + hours_to_add
+                )
+
+                task.save(
+                    update_fields=[
+                        "actual_hours"
+                    ]
+                )
+
+            return redirect(
+                "life:task_detail",
+                pk=task.pk,
+            )
+
+    # =========================================
+    # RELACIONES
+    # =========================================
+
+    impacts = (
+        task.impacts
+        .select_related(
+            "plan",
+            "plan__life_area",
+        )
+        .order_by(
+            "-impact_percent"
+        )
     )
 
-    subtasks = task.subtasks.all()
+    subtasks = (
+        task.subtasks
+        .all()
+        .order_by(
+            "status",
+            "due_date",
+        )
+    )
+
+    # =========================================
+    # HORAS
+    # =========================================
+
+    estimated_hours = Decimal(
+        str(task.estimated_hours or 0)
+    )
+
+    actual_hours = Decimal(
+        str(task.actual_hours or 0)
+    )
+
+    remaining_hours = max(
+        Decimal("0"),
+        estimated_hours - actual_hours,
+    )
+
+    # =========================================
+    # PROGRESO POR TIEMPO
+    # =========================================
+
+    if estimated_hours > 0:
+
+        progress_percent = (
+            actual_hours
+            / estimated_hours
+            * Decimal("100")
+        )
+
+        progress_percent = min(
+            Decimal("100"),
+            progress_percent,
+        )
+
+    else:
+        progress_percent = Decimal("0")
+
+    if task.status == Task.Status.COMPLETED:
+        progress_percent = Decimal("100")
+
+    remaining_percent = max(
+        Decimal("0"),
+        Decimal("100")
+        - progress_percent,
+    )
+
+    # =========================================
+    # DEADLINE
+    # =========================================
+
+    today = date.today()
+
+    days_remaining = None
+
+    if task.due_date:
+
+        days_remaining = (
+            task.due_date - today
+        ).days
+
+    # =========================================
+    # SUBTAREAS
+    # =========================================
+
+    total_subtasks = subtasks.count()
+
+    completed_subtasks = subtasks.filter(
+        status=Task.Status.COMPLETED
+    ).count()
+
+    context = {
+        "task": task,
+
+        "impacts": impacts,
+        "subtasks": subtasks,
+
+        "estimated_hours": estimated_hours,
+        "actual_hours": actual_hours,
+        "remaining_hours": remaining_hours,
+
+        "progress_percent": progress_percent,
+        "remaining_percent": remaining_percent,
+
+        "days_remaining": days_remaining,
+
+        "total_subtasks": total_subtasks,
+        "completed_subtasks": completed_subtasks,
+    }
 
     return render(
         request,
         "life/task_detail.html",
-        {
-            "task": task,
-            "impacts": impacts,
-            "subtasks": subtasks,
-        },
+        context,
     )
 
 

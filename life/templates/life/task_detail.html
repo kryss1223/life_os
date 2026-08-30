@@ -1,169 +1,796 @@
 {% extends "life/base.html" %}
+{% load l10n %}
 
-{% block title %}{{ task.name }} | Life OS{% endblock %}
+{% block title %}
+    {{ task.name }} | Life OS
+{% endblock %}
+
 
 {% block content %}
 
-<header class="page-header detail-header">
-
-    <div>
-
-        <span class="eyebrow">
-            TASK
-        </span>
-
-        <h1>
-            {{ task.name }}
-        </h1>
-
-        <p>
-            {{ task.description }}
-        </p>
-
-    </div>
+<div class="task-detail-page">
 
 
-    <div class="detail-actions">
+    <!-- =========================================
+         HEADER
+    ========================================== -->
 
-        <a
-            href="{% url 'life:task_edit' task.pk %}"
-            class="button button-secondary"
-        >
-            Editar
-        </a>
+    <header class="task-detail-header">
 
+        <div class="task-detail-header-main">
 
-        <form
-            method="POST"
-            action="{% url 'life:task_delete' task.pk %}"
-            onsubmit="return confirm('¿Eliminar esta tarea?');"
-        >
-
-            {% csrf_token %}
-
-            <button
-                type="submit"
-                class="button button-danger"
+            <a
+                href="{% url 'life:task_list' %}"
+                class="task-detail-back"
             >
-                Eliminar
-            </button>
+                ←
+                <span>TASK DETAIL</span>
+            </a>
 
-        </form>
+
+            <div class="task-detail-context">
+
+                {% for impact in impacts %}
+
+                    {% if forloop.first %}
+
+                        <span>
+                            {{ impact.plan.life_area.name }}
+                        </span>
+
+                        <span class="task-detail-context-divider">
+                            /
+                        </span>
+
+                        <span>
+                            {{ impact.plan.name }}
+                        </span>
+
+                    {% endif %}
+
+                {% empty %}
+
+                    <span>
+                        Sin plan asociado
+                    </span>
+
+                {% endfor %}
+
+
+                <span
+                    class="
+                        task-detail-status
+                        status-{{ task.status|lower }}
+                    "
+                >
+                    {{ task.get_status_display }}
+                </span>
+
+            </div>
+
+
+            <h1>
+                {{ task.name }}
+            </h1>
+
+
+            {% if task.description %}
+
+                <p class="task-detail-description">
+                    {{ task.description }}
+                </p>
+
+            {% else %}
+
+                <p class="task-detail-description empty-text">
+                    Sin descripción.
+                </p>
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="task-detail-actions">
+
+            <a
+                href="{% url 'life:task_edit' task.pk %}"
+                class="task-detail-action task-detail-edit"
+            >
+                ✎
+                Editar
+            </a>
+
+
+            <form
+                method="POST"
+                action="{% url 'life:task_delete' task.pk %}"
+                onsubmit="
+                    return confirm(
+                        '¿Eliminar esta tarea?'
+                    );
+                "
+            >
+
+                {% csrf_token %}
+
+                <button
+                    type="submit"
+                    class="
+                        task-detail-action
+                        task-detail-delete
+                    "
+                >
+                    ×
+                    Eliminar
+                </button>
+
+            </form>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- =========================================
+         MAIN PROGRESS + HOURS
+    ========================================== -->
+
+    <div class="task-detail-main-grid">
+
+
+        <!-- ===============================
+             PROGRESS
+        ================================ -->
+
+        <section class="task-detail-card task-progress-card">
+
+            <div class="task-progress-header">
+
+                <div>
+
+                    <span class="task-card-label">
+                        Progreso de la tarea
+                    </span>
+
+                    <strong class="task-progress-big">
+                        {{ progress_percent|floatformat:0 }}%
+                    </strong>
+
+                </div>
+
+
+                <div class="task-deadline-summary">
+
+                    {% if task.due_date %}
+
+                        {% if days_remaining < 0 %}
+
+                            <span class="deadline-danger">
+                                ⚠ Vencida hace
+                                {{ days_remaining|stringformat:"+d"|slice:"1:" }}
+                                días
+                            </span>
+
+                        {% elif days_remaining == 0 %}
+
+                            <span class="deadline-warning">
+                                ◷ Vence hoy
+                            </span>
+
+                        {% elif days_remaining == 1 %}
+
+                            <span class="deadline-warning">
+                                ◷ Vence mañana
+                            </span>
+
+                        {% else %}
+
+                            <span>
+                                ◷ Vence en
+                                {{ days_remaining }}
+                                días
+                            </span>
+
+                        {% endif %}
+
+
+                        <strong>
+                            {{ task.due_date|date:"d M Y" }}
+                        </strong>
+
+                    {% else %}
+
+                        <span>
+                            Sin deadline
+                        </span>
+
+                        <strong>
+                            —
+                        </strong>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <div class="task-main-progress-track">
+
+                <div
+                    class="task-main-progress-fill"
+                    style="
+                        width:
+                        {{ progress_percent|unlocalize }}%;
+                    "
+                ></div>
+
+            </div>
+
+
+            <!-- METRICS -->
+
+            <div class="task-progress-metrics">
+
+
+                <div class="task-progress-metric">
+
+                    <span>
+                        Horas realizadas
+                    </span>
+
+                    <strong>
+                        {{ actual_hours|floatformat:1 }}h
+                    </strong>
+
+                    <small>
+                        {{ progress_percent|floatformat:0 }}%
+                        del total
+                    </small>
+
+                </div>
+
+
+                <div class="task-progress-metric">
+
+                    <span>
+                        Horas restantes
+                    </span>
+
+                    <strong>
+                        {{ remaining_hours|floatformat:1 }}h
+                    </strong>
+
+                    <small>
+                        {{ remaining_percent|floatformat:0 }}%
+                        del total
+                    </small>
+
+                </div>
+
+
+                <div class="task-progress-metric">
+
+                    <span>
+                        Horas estimadas
+                    </span>
+
+                    <strong>
+                        {{ estimated_hours|floatformat:1 }}h
+                    </strong>
+
+                    <small>
+                        Estimación inicial
+                    </small>
+
+                </div>
+
+
+                <div class="task-progress-metric">
+
+                    <span>
+                        Deadline
+                    </span>
+
+                    <strong>
+
+                        {% if task.due_date %}
+
+                            {{ task.due_date|date:"d M Y" }}
+
+                        {% else %}
+
+                            —
+
+                        {% endif %}
+
+                    </strong>
+
+                    <small>
+
+                        {% if task.due_date %}
+
+                            {% if days_remaining < 0 %}
+
+                                Fuera de plazo
+
+                            {% elif days_remaining == 0 %}
+
+                                Hoy
+
+                            {% else %}
+
+                                {{ days_remaining }}
+                                días restantes
+
+                            {% endif %}
+
+                        {% else %}
+
+                            No definida
+
+                        {% endif %}
+
+                    </small>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ===============================
+             ADD HOURS
+        ================================ -->
+
+        <section class="task-detail-card task-hours-card">
+
+            <div>
+
+                <span class="task-card-label">
+                    TRACKING
+                </span>
+
+                <h2>
+                    Registrar horas
+                </h2>
+
+            </div>
+
+
+            <form
+                method="POST"
+                class="task-hours-form"
+            >
+
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    name="action"
+                    value="add_hours"
+                >
+
+
+                <div class="task-hours-stepper">
+
+                    <button
+                        type="button"
+                        onclick="changeTaskHours(-0.5)"
+                    >
+                        − 0.5h
+                    </button>
+
+
+                    <div class="task-hours-input-wrapper">
+
+                        <input
+                            id="hours-to-add"
+                            type="number"
+                            name="hours_to_add"
+                            value="0.5"
+                            min="0.5"
+                            step="0.5"
+                            required
+                        >
+
+                        <span>
+                            h
+                        </span>
+
+                        <small>
+                            Nueva entrada
+                        </small>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        onclick="changeTaskHours(0.5)"
+                    >
+                        + 0.5h
+                    </button>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="task-hours-submit"
+                >
+                    ◷
+                    Guardar horas
+                </button>
+
+            </form>
+
+
+            <p class="task-hours-help">
+                Se sumarán a las
+                {{ actual_hours|floatformat:1 }}h
+                ya registradas.
+            </p>
+
+        </section>
 
     </div>
 
-</header>
 
 
-    <form
-        method="POST"
-        action="{% url 'life:task_delete' task.pk %}"
-        onsubmit="return confirm('¿Eliminar esta tarea?');"
-    >
+    <!-- =========================================
+         IMPACT
+    ========================================== -->
 
-        {% csrf_token %}
+    <section class="task-detail-section">
 
-        <button
-            type="submit"
-            class="button button-danger"
-        >
-            Eliminar tarea
-        </button>
+        <div class="task-detail-section-header">
 
-    </form>
+            <div>
 
-</header>
-</header>
+                <span class="eyebrow">
+                    PLAN IMPACT
+                </span>
+
+                <h2>
+                    Impacto en planes
+                </h2>
+
+            </div>
+
+        </div>
 
 
-<div class="metric-grid">
+        <div class="task-impact-grid">
 
-    <div class="metric-card">
-        <span>Estimado</span>
-        <strong>{{ task.estimated_hours }}h</strong>
+            {% for impact in impacts %}
+
+                <a
+                    href="{% url 'life:plan_detail' impact.plan.pk %}"
+                    class="task-impact-card"
+                >
+
+                    <div class="task-impact-icon">
+                        ◎
+                    </div>
+
+
+                    <div class="task-impact-content">
+
+                        <span class="task-impact-area">
+                            {{ impact.plan.life_area.name }}
+                        </span>
+
+
+                        <strong>
+                            {{ impact.plan.name }}
+                        </strong>
+
+
+                        <div class="task-impact-value">
+
+                            <span>
+                                Impacto en el plan
+                            </span>
+
+                            <strong>
+                                {{ impact.impact_percent|floatformat:0 }}%
+                            </strong>
+
+                        </div>
+
+
+                        <div class="task-impact-track">
+
+                            <div
+                                class="task-impact-fill"
+                                style="
+                                    width:
+                                    {{ impact.impact_percent|unlocalize }}%;
+                                "
+                            ></div>
+
+                        </div>
+
+                    </div>
+
+                </a>
+
+
+            {% empty %}
+
+                <div class="task-detail-empty">
+
+                    <strong>
+                        Sin planes asociados
+                    </strong>
+
+                    <span>
+                        Esta tarea todavía no contribuye
+                        a ningún plan.
+                    </span>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================================
+         BOTTOM GRID
+    ========================================== -->
+
+    <div class="task-detail-bottom-grid">
+
+
+        <!-- ===============================
+             SUBTASKS
+        ================================ -->
+
+        <section class="task-detail-card task-subtasks-card">
+
+            <div class="task-subtasks-header">
+
+                <h2>
+                    Subtareas
+                </h2>
+
+
+                <span class="task-subtasks-counter">
+                    {{ completed_subtasks }}
+                    /
+                    {{ total_subtasks }}
+                    completadas
+                </span>
+
+            </div>
+
+
+            <div class="task-subtask-list">
+
+                {% for subtask in subtasks %}
+
+                    <a
+                        href="{% url 'life:task_detail' subtask.pk %}"
+                        class="
+                            task-subtask-row
+                            subtask-{{ subtask.status|lower }}
+                        "
+                    >
+
+                        <span class="task-subtask-check">
+
+                            {% if subtask.status == "COMPLETED" %}
+                                ✓
+                            {% endif %}
+
+                        </span>
+
+
+                        <strong>
+                            {{ subtask.name }}
+                        </strong>
+
+
+                        <span
+                            class="
+                                task-subtask-status
+                                status-{{ subtask.status|lower }}
+                            "
+                        >
+                            {{ subtask.get_status_display }}
+                        </span>
+
+                    </a>
+
+
+                {% empty %}
+
+                    <div class="task-detail-empty compact">
+
+                        <strong>
+                            No hay subtareas
+                        </strong>
+
+                        <span>
+                            Puedes añadirlas desde
+                            la edición de la tarea.
+                        </span>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+
+            <!--
+                FUTURO:
+                aquí podremos abrir directamente
+                un modal para crear subtareas.
+            -->
+
+            <div class="task-future-action">
+
+                <span>＋</span>
+
+                Añadir subtarea
+
+                <small>
+                    Próximamente
+                </small>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ===============================
+             ACTIVITY
+        ================================ -->
+
+        <section class="task-detail-card task-activity-card">
+
+            <div class="task-activity-header">
+
+                <h2>
+                    Últimos movimientos
+                </h2>
+
+                <span class="future-badge">
+                    BETA
+                </span>
+
+            </div>
+
+
+            <div class="task-activity-list">
+
+
+                <!-- REAL: CREATED_AT -->
+
+                <div class="task-activity-item">
+
+                    <div class="task-activity-dot">
+                        ＋
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Tarea creada
+                        </strong>
+
+                        <span>
+                            {{ task.created_at|date:"d M Y · H:i" }}
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- REAL: COMPLETED_AT -->
+
+                {% if task.completed_at %}
+
+                    <div class="task-activity-item completed">
+
+                        <div class="task-activity-dot">
+                            ✓
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Tarea completada
+                            </strong>
+
+                            <span>
+                                {{ task.completed_at|date:"d M Y · H:i" }}
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+
+
+                <!-- FUTURE -->
+
+                <div class="task-activity-item future">
+
+                    <div class="task-activity-dot">
+                        …
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Historial detallado
+                        </strong>
+
+                        <span>
+                            Todavía no disponible
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="task-future-note">
+
+                Próximamente aquí aparecerán cambios
+                de estado, horas añadidas y
+                modificaciones de deadline.
+
+            </div>
+
+        </section>
+
     </div>
 
-    <div class="metric-card">
-        <span>Real</span>
-        <strong>{{ task.actual_hours }}h</strong>
-    </div>
-
-    <div class="metric-card">
-        <span>Estado</span>
-        <strong>{{ task.get_status_display }}</strong>
-    </div>
 
 </div>
 
 
-<section>
 
-    <div class="section-title">
-        <h2>Impactos</h2>
-    </div>
+<script>
 
-    <div class="table-card">
+function changeTaskHours(delta) {
 
-        {% for impact in impacts %}
+    const input = document.getElementById(
+        "hours-to-add"
+    );
 
-            <div class="data-row">
+    let value = parseFloat(
+        input.value || "0.5"
+    );
 
-                <div>
-                    <strong>
-                        {{ impact.plan.name }}
-                    </strong>
+    value += delta;
 
-                    <span>
-                        {{ impact.plan.life_area.name }}
-                    </span>
-                </div>
+    if (value < 0.5) {
+        value = 0.5;
+    }
 
-                <strong>
-                    {{ impact.impact_percent }}%
-                </strong>
+    input.value = value.toFixed(1);
+}
 
-            </div>
-
-        {% endfor %}
-
-    </div>
-
-</section>
-
-
-{% if subtasks %}
-
-<section>
-
-    <div class="section-title">
-        <h2>Subtareas</h2>
-    </div>
-
-    <div class="tasks">
-
-        {% for subtask in subtasks %}
-
-            <a
-                href="{% url 'life:task_detail' subtask.pk %}"
-                class="task card-link"
-            >
-
-                <strong>
-                    {{ subtask.name }}
-                </strong>
-
-                <span>
-                    {{ subtask.get_status_display }}
-                </span>
-
-            </a>
-
-        {% endfor %}
-
-    </div>
-
-</section>
-
-{% endif %}
+</script>
 
 {% endblock %}
