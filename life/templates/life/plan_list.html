@@ -1,218 +1,467 @@
 {% extends "life/base.html" %}
+{% load l10n %}
+
 
 {% block title %}
-    {{ area.name }} | Life OS
+    Planes | Life OS
 {% endblock %}
 
 
 {% block content %}
 
-<header class="page-header area-detail-header">
-
-    <span class="eyebrow">
-        LIFE AREA
-    </span>
-
-    <h1>
-        {{ area.name }}
-    </h1>
-
-    {% if area.description %}
-        <p>
-            {{ area.description }}
-        </p>
-    {% else %}
-        <p>
-            Tus planes, objetivos y evolución dentro de esta área.
-        </p>
-    {% endif %}
-
-</header>
+<div class="plans-dashboard-page">
 
 
+    <!-- =========================================
+         HEADER
+    ========================================== -->
 
-<!-- ============================ -->
-<!-- PLANES -->
-<!-- ============================ -->
-
-<section class="area-plans-section">
-
-    <div class="section-title-row plans-section-header">
+    <header class="plans-dashboard-header">
 
         <div>
-            <span class="eyebrow">
-                ACTIVE ROADMAP
+
+            <span class="eyebrow plans-eyebrow">
+                PLANS
             </span>
 
-            <h2>
+            <h1>
                 Planes
-            </h2>
+            </h1>
+
+            <p>
+                Tus objetivos de medio y largo plazo.
+            </p>
+
         </div>
 
 
         <a
             href="{% url 'life:plan_create' %}"
-            class="button"
+            class="plans-create-button"
         >
             + Nuevo plan
         </a>
 
+    </header>
+
+
+
+    <!-- =========================================
+         SUMMARY
+    ========================================== -->
+
+    <div class="plans-summary-grid">
+
+
+        <div class="plans-summary-card">
+
+            <div class="plans-summary-icon summary-total">
+                ◫
+            </div>
+
+            <div>
+                <span>Total</span>
+
+                <strong>
+                    {{ total_plans }}
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div class="plans-summary-card">
+
+            <div class="plans-summary-icon summary-active">
+                ∿
+            </div>
+
+            <div>
+                <span>Activos</span>
+
+                <strong>
+                    {{ active_plans }}
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div class="plans-summary-card">
+
+            <div class="plans-summary-icon summary-completed">
+                ✓
+            </div>
+
+            <div>
+                <span>Completados</span>
+
+                <strong>
+                    {{ completed_plans }}
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div class="plans-summary-card">
+
+            <div class="plans-summary-icon summary-paused">
+                ‖
+            </div>
+
+            <div>
+                <span>Pausados</span>
+
+                <strong>
+                    {{ paused_plans }}
+                </strong>
+            </div>
+
+        </div>
+
     </div>
 
 
-    <div class="plans-grid">
 
-        {% for plan in plans %}
+    <!-- =========================================
+         FILTERS
+    ========================================== -->
+
+    <div class="plans-toolbar">
+
+
+        <div class="plans-filters">
 
             <a
-                href="{% url 'life:plan_detail' plan.pk %}"
+                href="?filter=all&sort={{ current_sort }}"
                 class="
-                    plan-card
+                    plans-filter
+                    {% if current_filter == 'all' %}
+                        active
+                    {% endif %}
+                "
+            >
+                Todas
+            </a>
 
-                    {% if plan.progress >= 100 %}
-                        progress-complete
 
-                    {% elif plan.progress >= 75 %}
-                        progress-high
+            <a
+                href="?filter=active&sort={{ current_sort }}"
+                class="
+                    plans-filter
+                    {% if current_filter == 'active' %}
+                        active
+                    {% endif %}
+                "
+            >
+                Activos
+            </a>
 
-                    {% elif plan.progress >= 50 %}
-                        progress-medium
 
-                    {% elif plan.progress >= 25 %}
-                        progress-started
+            <a
+                href="?filter=paused&sort={{ current_sort }}"
+                class="
+                    plans-filter
+                    {% if current_filter == 'paused' %}
+                        active
+                    {% endif %}
+                "
+            >
+                Pausados
+            </a>
+
+
+            <a
+                href="?filter=completed&sort={{ current_sort }}"
+                class="
+                    plans-filter
+                    {% if current_filter == 'completed' %}
+                        active
+                    {% endif %}
+                "
+            >
+                Completados
+            </a>
+
+        </div>
+
+
+        <form
+            method="GET"
+            class="plans-sort-form"
+        >
+
+            <input
+                type="hidden"
+                name="filter"
+                value="{{ current_filter }}"
+            >
+
+
+            <select
+                name="sort"
+                onchange="this.form.submit()"
+            >
+
+                <option
+                    value="importance"
+                    {% if current_sort == 'importance' %}
+                        selected
+                    {% endif %}
+                >
+                    Importancia
+                </option>
+
+
+                <option
+                    value="progress"
+                    {% if current_sort == 'progress' %}
+                        selected
+                    {% endif %}
+                >
+                    Progreso
+                </option>
+
+
+                <option
+                    value="target"
+                    {% if current_sort == 'target' %}
+                        selected
+                    {% endif %}
+                >
+                    Fecha objetivo
+                </option>
+
+
+                <option
+                    value="recent"
+                    {% if current_sort == 'recent' %}
+                        selected
+                    {% endif %}
+                >
+                    Más recientes
+                </option>
+
+            </select>
+
+        </form>
+
+    </div>
+
+
+
+    <!-- =========================================
+         PLAN LIST
+    ========================================== -->
+
+    <div class="plans-dashboard-list">
+
+
+        {% for item in plan_rows %}
+
+            <a
+                href="{% url 'life:plan_detail' item.plan.pk %}"
+                class="
+                    plans-dashboard-card
+
+                    {% if item.plan.progress >= 100 %}
+                        plan-progress-complete
+
+                    {% elif item.plan.progress >= 75 %}
+                        plan-progress-high
+
+                    {% elif item.plan.progress >= 50 %}
+                        plan-progress-medium
+
+                    {% elif item.plan.progress >= 25 %}
+                        plan-progress-started
 
                     {% else %}
-                        progress-low
+                        plan-progress-low
                     {% endif %}
                 "
             >
 
-                <!-- HEADER -->
 
-                <div class="plan-card-header">
+                <!-- TOP -->
 
-                    <span
-                        class="
-                            plan-status
-                            status-{{ plan.status|lower }}
-                        "
-                    >
-                        {{ plan.get_status_display }}
-                    </span>
+                <div class="plans-card-top">
+
+                    <div>
+
+                        <div class="plans-card-context">
+
+                            <span
+                                class="
+                                    plans-status-pill
+                                    status-{{ item.plan.status|lower }}
+                                "
+                            >
+                                {{ item.plan.get_status_display }}
+                            </span>
 
 
-                    <strong class="plan-percent">
-                        {{ plan.progress|floatformat:0 }}%
+                            <span>
+                                •
+                                {{ item.plan.life_area.name }}
+                            </span>
+
+                        </div>
+
+
+                        <h2>
+                            {{ item.plan.name }}
+                        </h2>
+
+
+                        {% if item.plan.description %}
+
+                            <p>
+                                {{ item.plan.description|truncatechars:110 }}
+                            </p>
+
+                        {% else %}
+
+                            <p class="plans-empty-description">
+                                Sin descripción.
+                            </p>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <strong class="plans-card-percent">
+                        {{ item.plan.progress|floatformat:0 }}%
                     </strong>
 
                 </div>
 
 
-                <!-- TITLE -->
 
-                <div class="plan-card-body">
+                <!-- PROGRESS -->
 
-                    <h3>
-                        {{ plan.name }}
-                    </h3>
+                <div class="plans-card-progress-track">
 
-
-                    <div class="plan-meta">
-
-                        <span>
-                            <small>
-                                IMPORTANCIA
-                            </small>
-
-                            <strong>
-                                {{ plan.importance_weight }}
-                            </strong>
-                        </span>
-
-
-                        {% if plan.estimated_hours %}
-
-                            <span>
-                                <small>
-                                    ESTIMACIÓN
-                                </small>
-
-                                <strong>
-                                    {{ plan.estimated_hours|floatformat:0 }}h
-                                </strong>
-                            </span>
-
-                        {% endif %}
-
-
-                        {% if plan.target_date %}
-
-                            <span>
-                                <small>
-                                    OBJETIVO
-                                </small>
-
-                                <strong>
-                                    {{ plan.target_date|date:"d M Y" }}
-                                </strong>
-                            </span>
-
-                        {% endif %}
-
-                    </div>
+                    <div
+                        class="plans-card-progress-fill"
+                        style="
+                            width:
+                            {{ item.plan.progress|unlocalize }}%;
+                        "
+                    ></div>
 
                 </div>
 
 
-                <!-- PROGRESS -->
 
-                <div class="plan-card-progress">
+                <!-- METRICS -->
 
-                    <div class="plan-progress-track">
+                <div class="plans-card-metrics">
 
-                        <div
-                            class="plan-progress-fill"
-                            style="width: {{ plan.progress }}%;"
-                        ></div>
+
+                    <div class="plans-card-metric">
+
+                        <span class="plans-metric-icon">
+                            ☆
+                        </span>
+
+                        <div>
+
+                            <small>
+                                Importancia
+                            </small>
+
+                            <strong>
+                                {{ item.plan.importance_weight }}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="plans-card-metric">
+
+                        <span class="plans-metric-icon">
+                            ◷
+                        </span>
+
+                        <div>
+
+                            <small>
+                                Horas
+                            </small>
+
+                            <strong>
+                                {{ item.actual_hours|floatformat:1 }}
+                                /
+                                {{ item.plan.estimated_hours|floatformat:1 }}h
+                            </strong>
+
+                        </div>
 
                     </div>
 
 
-                    <div class="plan-progress-caption">
+                    <div class="plans-card-metric">
 
-                        {% if plan.progress >= 100 %}
+                        <span class="plans-metric-icon">
+                            ☷
+                        </span>
 
-                            <span>
-                                Completado
-                            </span>
+                        <div>
 
-                        {% elif plan.progress >= 75 %}
+                            <small>
+                                Tareas
+                            </small>
 
-                            <span>
-                                Recta final
-                            </span>
+                            <strong>
+                                {{ item.completed_tasks }}
+                                /
+                                {{ item.total_tasks }}
+                            </strong>
 
-                        {% elif plan.progress >= 50 %}
-
-                            <span>
-                                Buen avance
-                            </span>
-
-                        {% elif plan.progress >= 25 %}
-
-                            <span>
-                                En marcha
-                            </span>
-
-                        {% else %}
-
-                            <span>
-                                Empezando
-                            </span>
-
-                        {% endif %}
+                        </div>
 
                     </div>
+
+
+                    <div class="plans-card-metric">
+
+                        <span class="plans-metric-icon">
+                            ◎
+                        </span>
+
+                        <div>
+
+                            <small>
+                                Objetivo
+                            </small>
+
+                            <strong>
+
+                                {% if item.plan.target_date %}
+
+                                    {{ item.plan.target_date|date:"d M Y" }}
+
+                                {% else %}
+
+                                    Sin fecha
+
+                                {% endif %}
+
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <span class="plans-card-menu">
+                        ⋮
+                    </span>
 
                 </div>
 
@@ -221,26 +470,25 @@
 
         {% empty %}
 
-            <div class="plans-empty-state">
+            <div class="plans-dashboard-empty">
 
                 <span class="eyebrow">
                     SIN PLANES
                 </span>
 
                 <h3>
-                    Todavía no hay ningún plan
+                    No hay planes con este filtro
                 </h3>
 
                 <p>
-                    Crea uno para empezar a organizar
-                    esta área.
+                    Prueba otro filtro o crea un plan nuevo.
                 </p>
 
                 <a
                     href="{% url 'life:plan_create' %}"
-                    class="button"
+                    class="plans-create-button"
                 >
-                    + Crear primer plan
+                    + Crear plan
                 </a>
 
             </div>
@@ -249,93 +497,112 @@
 
     </div>
 
-</section>
 
 
+    <!-- =========================================
+         HISTORY
+    ========================================== -->
 
-<!-- ============================ -->
-<!-- HISTÓRICO -->
-<!-- ============================ -->
+    <section class="plans-history">
 
-<section class="area-history-section">
+        <div class="plans-history-header">
 
-    <div class="section-title">
+            <span>
+                ↗
+            </span>
 
-        <span class="eyebrow">
-            HISTORY
-        </span>
+            <strong>
+                HISTÓRICO SEMANAL
+            </strong>
 
-        <h2>
-            Histórico semanal
-        </h2>
-
-    </div>
+        </div>
 
 
-    {% if snapshots %}
+        {% if recent_tracking %}
 
-        <div class="table-card">
+            <div class="plans-history-list">
 
-            {% for snapshot in snapshots %}
+                {% for tracking in recent_tracking %}
 
-                <div class="data-row">
+                    <div class="plans-history-row">
 
-                    <div>
-                        <span>
-                            Semana
-                        </span>
+                        <div>
 
-                        <strong>
-                            {{ snapshot.week_start }}
-                        </strong>
+                            <span>
+                                {{ tracking.week.week_start|date:"d M Y" }}
+                            </span>
+
+                            <strong>
+                                {{ tracking.plan.name }}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Horas
+                            </span>
+
+                            <strong>
+                                {{ tracking.actual_hours|default:0|floatformat:1 }}
+                                /
+                                {{ tracking.planned_hours|default:0|floatformat:1 }}h
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Progreso
+                            </span>
+
+                            <strong>
+                                {{ tracking.progress_start|floatformat:0 }}%
+                                →
+                                {{ tracking.progress_end|floatformat:0 }}%
+                            </strong>
+
+                        </div>
+
                     </div>
 
+                {% endfor %}
 
-                    <div>
-                        <span>
-                            Tiempo dedicado
-                        </span>
-
-                        <strong>
-                            {{ snapshot.hours_spent }}h
-                        </strong>
-                    </div>
+            </div>
 
 
-                    <div>
-                        <span>
-                            Satisfacción
-                        </span>
+        {% else %}
 
-                        <strong>
-                            {{ snapshot.satisfaction }}%
-                        </strong>
-                    </div>
+            <div class="plans-history-empty">
+
+                <div class="plans-history-empty-icon">
+                    □
+                </div>
+
+                <div>
+
+                    <strong>
+                        Todavía no hay semanas registradas.
+                    </strong>
+
+                    <p>
+                        Cuando empieces a registrar semanas,
+                        aquí aparecerá tu evolución.
+                    </p>
 
                 </div>
 
-            {% endfor %}
+            </div>
 
-        </div>
+        {% endif %}
+
+    </section>
 
 
-    {% else %}
-
-        <div class="history-empty-state">
-
-            <span>
-                Aún no hay datos semanales.
-            </span>
-
-            <p>
-                Cuando empieces a registrar semanas,
-                aquí podrás ver la evolución del área.
-            </p>
-
-        </div>
-
-    {% endif %}
-
-</section>
+</div>
 
 {% endblock %}

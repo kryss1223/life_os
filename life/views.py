@@ -220,19 +220,183 @@ def life_area_delete(request, pk):
 
 @login_required
 def plan_list(request):
-    plans = (
+
+    # =========================================
+    # BASE
+    # =========================================
+
+    base_plans = (
         Plan.objects
-        .filter(life_area__user=request.user)
-        .select_related("life_area")
-        .order_by("life_area", "-importance_weight")
+        .filter(
+            life_area__user=request.user
+        )
+        .select_related(
+            "life_area"
+        )
     )
+
+    # =========================================
+    # STATS
+    # =========================================
+
+    total_plans = base_plans.count()
+
+    active_plans = base_plans.filter(
+        status=Plan.Status.ACTIVE
+    ).count()
+
+    completed_plans = base_plans.filter(
+        status=Plan.Status.COMPLETED
+    ).count()
+
+    paused_plans = base_plans.filter(
+        status=Plan.Status.PAUSED
+    ).count()
+
+    # =========================================
+    # FILTROS
+    # =========================================
+
+    current_filter = request.GET.get(
+        "filter",
+        "all",
+    )
+
+    plans = base_plans
+
+    if current_filter == "active":
+
+        plans = plans.filter(
+            status=Plan.Status.ACTIVE
+        )
+
+    elif current_filter == "paused":
+
+        plans = plans.filter(
+            status=Plan.Status.PAUSED
+        )
+
+    elif current_filter == "completed":
+
+        plans = plans.filter(
+            status=Plan.Status.COMPLETED
+        )
+
+    # =========================================
+    # ORDEN
+    # =========================================
+
+    current_sort = request.GET.get(
+        "sort",
+        "importance",
+    )
+
+    if current_sort == "progress":
+
+        plans = plans.order_by(
+            "-progress",
+            "-importance_weight",
+        )
+
+    elif current_sort == "target":
+
+        plans = plans.order_by(
+            "target_date",
+            "-importance_weight",
+        )
+
+    elif current_sort == "recent":
+
+        plans = plans.order_by(
+            "-created_at"
+        )
+
+    else:
+
+        plans = plans.order_by(
+            "-importance_weight",
+            "-created_at",
+        )
+
+    # =========================================
+    # TASKS + HORAS DE CADA PLAN
+    # =========================================
+
+    plans = list(
+        plans.prefetch_related("tasks")
+    )
+
+    plan_rows = []
+
+    for plan in plans:
+
+        tasks = list(
+            plan.tasks.all()
+        )
+
+        total_tasks = len(tasks)
+
+        completed_tasks = sum(
+            1
+            for task in tasks
+            if task.status == Task.Status.COMPLETED
+        )
+
+        actual_hours = sum(
+            (
+                task.actual_hours
+                or Decimal("0")
+                for task in tasks
+            ),
+            Decimal("0"),
+        )
+
+        plan_rows.append({
+            "plan": plan,
+
+            "total_tasks": total_tasks,
+            "completed_tasks": completed_tasks,
+
+            "actual_hours": actual_hours,
+        })
+
+    # =========================================
+    # HISTÓRICO RECIENTE
+    # =========================================
+
+    recent_tracking = (
+        WeeklyTracking.objects
+        .filter(
+            plan__life_area__user=request.user
+        )
+        .select_related(
+            "plan",
+            "week",
+        )
+        .order_by(
+            "-week__week_start"
+        )[:6]
+    )
+
+    context = {
+        "plan_rows": plan_rows,
+
+        "total_plans": total_plans,
+        "active_plans": active_plans,
+        "completed_plans": completed_plans,
+        "paused_plans": paused_plans,
+
+        "current_filter": current_filter,
+        "current_sort": current_sort,
+
+        "recent_tracking": recent_tracking,
+    }
 
     return render(
         request,
         "life/plan_list.html",
-        {"plans": plans},
+        context,
     )
-
 
 
 @login_required
