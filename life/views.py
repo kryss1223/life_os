@@ -1,6 +1,7 @@
-from django.contrib.auth.decorators import login_required
+
 from django.shortcuts import render,redirect,get_object_or_404
 from django.urls import reverse
+from django.contrib.auth.decorators import login_required
 
 from django.db.models import Avg, Sum
 from datetime import date, timedelta
@@ -53,31 +54,659 @@ def register(request):
 
 @login_required
 def dashboard(request):
-    areas = (
+    today = date.today()
+
+    current_week_start = (
+        today - timedelta(days=today.weekday())
+    )
+
+    current_week_end = (
+        current_week_start + timedelta(days=6)
+    )
+
+    # =========================================
+    # BASE
+    # =========================================
+
+    areas = list(
         LifeArea.objects
         .filter(user=request.user)
         .prefetch_related("plans")
-        .order_by("-importance_weight")
+        .order_by("-importance_weight", "name")
     )
 
-    active_plans = Plan.objects.filter(
-        life_area__user=request.user,
-        status=Plan.Status.ACTIVE,
-    ).select_related("life_area")
+    plans = (
+        Plan.objects
+        .filter(life_area__user=request.user)
+        .select_related("life_area")
+    )
 
-    pending_tasks = Task.objects.filter(
-        plans__life_area__user=request.user,
-    ).exclude(
-        status__in=[Task.Status.COMPLETED, Task.Status.CANCELLED]
-    ).distinct()[:8]
+    active_plans = (
+        plans
+        .filter(status=Plan.Status.ACTIVE)
+        .order_by(
+            "-importance_weight",
+            "target_date",
+            "name",
+        )
+    )
 
-    context = {
-        "areas": areas,
-        "active_plans": active_plans,
-        "pending_tasks": pending_tasks,
+    visible_plans = plans.exclude(
+        status=Plan.Status.CANCELLED
+    )
+
+    tasks = (
+        Task.objects
+        .filter(
+            plans__life_area__user=request.user
+        )
+        .prefetch_related(
+            "plans",
+            "plans__life_area",
+            "impacts",
+            "impacts__plan",
+            "impacts__plan__life_area",
+        )
+        .distinct()
+    )
+
+    open_tasks = tasks.exclude(
+        status__in=[
+            Task.Status.COMPLETED,
+            Task.Status.CANCELLED,
+        ]
+    )
+
+    # =========================================
+    # SEMANA ACTUAL
+    # =========================================
+
+    current_week = (
+        Week.objects
+        .filter(
+            user=request.user,
+            week_start=current_week_start,
+        )
+        .first()
+    )
+
+    week_allocations = list(
+        WeeklyTaskAllocation.objects
+        .filter(
+            week=current_week,
+            planned_date__isnull=False,
+        )
+        .select_related("task")
+        .prefetch_related(
+            "task__plans",
+            "task__plans__life_area",
+            "task__impacts",
+            "task__impacts__plan",
+            "task__impacts__plan__life_area",
+        )
+        .order_by(
+            "planned_date",
+            "task__due_date",
+            "task__name",
+        )
+    ) if current_week else []
+
+    weekly_assigned_hours = sum(
+        (
+            allocation.planned_hours
+            or Decimal("0")
+            for allocation in week_allocations
+        ),
+        Decimal("0"),
+    )
+
+    target_hours_from_areas = sum(
+        (
+            area.weekly_hours_target
+            or Decimal("0")
+            for area in areas
+        ),
+        Decimal("0"),
+    )
+
+    if (
+        current_week
+        and current_week.available_hours is not None
+    ):
+        weekly_available_hours = Decimal(
+            str(current_week.available_hours)
+        )
+    else:
+        weekly_available_hours = target_hours_from_areas
+
+    weekly_free_hours = max(
+        Decimal("0"),
+        weekly_available_hours - weekly_assigned_hours,
+    )
+
+    if weekly_available_hours > 0:
+        weekly_load_percent = min(
+            Decimal("100"),
+            (
+                weekly_assigned_hours
+                / weekly_available_hours
+                * Decimal("100")
+            ),
+        )
+    else:
+        weekly_load_percent = Decimal("0")
+
+    # =========================================
+    # KPI SUPERIORES
+    # =========================================
+
+    active_tasks_count = open_tasks.count()
+
+    total_tasks_count = (
+        tasks
+        .exclude(status=Task.Status.CANCELLED)
+        .count()
+    )
+
+    active_plans_count = active_plans.count()
+
+    total_plans_count = visible_plans.count()
+
+    if areas:
+        life_balance = round(
+            sum(
+                area.current_satisfaction
+                for area in areas
+            )
+            / len(areas)
+        )
+    else:
+        life_balance = 0
+
+    # =========================================
+    # FOCO DE LA SEMANA
+    # =========================================
+
+    focus_plan = active_plans.first()
+
+    focus_actual_hours = Decimal("0")
+    focus_remaining_hours = Decimal("0")
+    focus_next_deadline = None
+    focus_days_remaining = None
+
+    if focus_plan:
+        focus_tasks = list(
+            focus_plan.tasks
+            .exclude(
+                status=Task.Status.CANCELLED
+            )
+            .order_by(
+                "due_date",
+                "name",
+            )
+        )
+
+        focus_actual_hours = sum(
+            (
+                task.actual_hours
+                or Decimal("0")
+                for task in focus_tasks
+            ),
+            Decimal("0"),
+        )
+
+        focus_remaining_hours = max(
+            Decimal("0"),
+            (
+                focus_plan.estimated_hours
+                or Decimal("0")
+            )
+            - focus_actual_hours,
+        )
+
+        focus_next_deadline = (
+            focus_plan.tasks
+            .exclude(
+                status__in=[
+                    Task.Status.COMPLETED,
+                    Task.Status.CANCELLED,
+                ]
+            )
+            .filter(
+                due_date__isnull=False,
+                due_date__gte=today,
+            )
+            .order_by("due_date")
+            .first()
+        )
+
+        if focus_next_deadline:
+            focus_days_remaining = (
+                focus_next_deadline.due_date
+                - today
+            ).days
+
+    # =========================================
+    # PRÓXIMOS DEADLINES
+    # =========================================
+
+    deadline_limit = today + timedelta(days=30)
+
+    deadline_tasks = list(
+        open_tasks
+        .filter(
+            due_date__isnull=False,
+            due_date__gte=today,
+            due_date__lte=deadline_limit,
+        )
+        .order_by(
+            "due_date",
+            "name",
+        )[:5]
+    )
+
+    deadline_rows = []
+
+    for task in deadline_tasks:
+        days_left = (
+            task.due_date - today
+        ).days
+
+        task_plans = list(
+            task.plans.all()
+        )
+
+        primary_plan = (
+            task_plans[0]
+            if task_plans
+            else None
+        )
+
+        if days_left <= 3:
+            tone = "urgent"
+            label = "Urgente"
+
+        elif task.status == Task.Status.IN_PROGRESS:
+            tone = "progress"
+            label = "En progreso"
+
+        else:
+            tone = "next"
+            label = "Próximo"
+
+        deadline_rows.append({
+            "task": task,
+            "plan": primary_plan,
+            "days_left": days_left,
+            "tone": tone,
+            "label": label,
+        })
+
+    # =========================================
+    # ÁREAS DE VIDA
+    # =========================================
+
+    area_rows = []
+
+    for index, area in enumerate(areas[:4]):
+        if area.current_satisfaction >= 75:
+            balance_tone = "good"
+
+        elif area.current_satisfaction >= 55:
+            balance_tone = "medium"
+
+        else:
+            balance_tone = "low"
+
+        area_rows.append({
+            "area": area,
+            "tone": f"tone-{(index % 5) + 1}",
+            "balance_tone": balance_tone,
+        })
+
+    # =========================================
+    # CALENDARIO SEMANAL + DISTRIBUCIÓN
+    # =========================================
+
+    day_names = [
+        "Lunes",
+        "Martes",
+        "Miércoles",
+        "Jueves",
+        "Viernes",
+        "Sábado",
+        "Domingo",
+    ]
+
+    allocations_by_date = {}
+
+    area_tone_by_id = {
+        area.pk: f"tone-{(index % 5) + 1}"
+        for index, area in enumerate(areas)
     }
 
-    return render(request, "life/dashboard.html", context)
+    distribution_map = {}
+
+    def allocation_area_info(allocation):
+        impacts = list(
+            allocation.task.impacts.all()
+        )
+
+        primary_impact = max(
+            impacts,
+            key=lambda item: item.impact_percent,
+            default=None,
+        )
+
+        if primary_impact:
+            area = (
+                primary_impact
+                .plan
+                .life_area
+            )
+
+            return (
+                area.pk,
+                area.name,
+                area_tone_by_id.get(
+                    area.pk,
+                    "tone-neutral",
+                ),
+            )
+
+        task_plans = list(
+            allocation.task.plans.all()
+        )
+
+        if task_plans:
+            area = task_plans[0].life_area
+
+            return (
+                area.pk,
+                area.name,
+                area_tone_by_id.get(
+                    area.pk,
+                    "tone-neutral",
+                ),
+            )
+
+        return (
+            None,
+            "Sin área",
+            "tone-neutral",
+        )
+
+    for allocation in week_allocations:
+        (
+            area_id,
+            area_name,
+            tone,
+        ) = allocation_area_info(
+            allocation
+        )
+
+        allocation_row = {
+            "allocation": allocation,
+            "task": allocation.task,
+            "hours": (
+                allocation.planned_hours
+                or Decimal("0")
+            ),
+            "area_name": area_name,
+            "tone": tone,
+        }
+
+        allocations_by_date.setdefault(
+            allocation.planned_date,
+            [],
+        ).append(allocation_row)
+
+        distribution_key = (
+            area_id,
+            area_name,
+            tone,
+        )
+
+        distribution_map[
+            distribution_key
+        ] = (
+            distribution_map.get(
+                distribution_key,
+                Decimal("0"),
+            )
+            + allocation_row["hours"]
+        )
+
+    week_schedule = []
+
+    for index in range(7):
+        current_date = (
+            current_week_start
+            + timedelta(days=index)
+        )
+
+        day_allocations = (
+            allocations_by_date.get(
+                current_date,
+                [],
+            )
+        )
+
+        day_total = sum(
+            (
+                item["hours"]
+                for item in day_allocations
+            ),
+            Decimal("0"),
+        )
+
+        week_schedule.append({
+            "name": day_names[index],
+            "date": current_date,
+            "allocations": day_allocations[:3],
+            "extra_count": max(
+                0,
+                len(day_allocations) - 3,
+            ),
+            "total_hours": day_total,
+        })
+
+    # =========================================
+    # DISTRIBUCIÓN DEL TIEMPO
+    # =========================================
+
+    palette = {
+        "tone-1": "#58d7df",
+        "tone-2": "#8b5cf6",
+        "tone-3": "#f2b632",
+        "tone-4": "#34a853",
+        "tone-5": "#87909d",
+        "tone-neutral": "#5f6772",
+    }
+
+    time_distribution = []
+
+    for (
+        area_id,
+        area_name,
+        tone,
+    ), hours in sorted(
+        distribution_map.items(),
+        key=lambda item: item[1],
+        reverse=True,
+    ):
+        if weekly_assigned_hours > 0:
+            percent = (
+                hours
+                / weekly_assigned_hours
+                * Decimal("100")
+            )
+        else:
+            percent = Decimal("0")
+
+        time_distribution.append({
+            "area_id": area_id,
+            "name": area_name,
+            "tone": tone,
+            "hours": hours,
+            "percent": percent,
+        })
+
+    gradient_segments = []
+    gradient_start = Decimal("0")
+
+    for row in time_distribution:
+        gradient_end = (
+            gradient_start
+            + row["percent"]
+        )
+
+        gradient_segments.append(
+            (
+                f"{palette[row['tone']]} "
+                f"{float(gradient_start):.2f}% "
+                f"{float(gradient_end):.2f}%"
+            )
+        )
+
+        gradient_start = gradient_end
+
+    if gradient_segments:
+        time_distribution_gradient = (
+            ", ".join(gradient_segments)
+        )
+    else:
+        time_distribution_gradient = (
+            "#2a2a2f 0% 100%"
+        )
+
+    # =========================================
+    # ACTIVIDAD RECIENTE
+    # =========================================
+
+    activity = []
+
+    recent_created_tasks = list(
+        tasks
+        .order_by("-created_at")[:5]
+    )
+
+    recent_completed_tasks = list(
+        tasks
+        .filter(completed_at__isnull=False)
+        .order_by("-completed_at")[:5]
+    )
+
+    recent_created_plans = list(
+        plans
+        .order_by("-created_at")[:5]
+    )
+
+    for task in recent_created_tasks:
+        task_plans = list(
+            task.plans.all()
+        )
+
+        primary_plan = (
+            task_plans[0]
+            if task_plans
+            else None
+        )
+
+        activity.append({
+            "kind": "created",
+            "at": task.created_at,
+            "title": f'Creaste la tarea "{task.name}"',
+            "context": (
+                primary_plan.name
+                if primary_plan
+                else "Tarea"
+            ),
+        })
+
+    for task in recent_completed_tasks:
+        task_plans = list(
+            task.plans.all()
+        )
+
+        primary_plan = (
+            task_plans[0]
+            if task_plans
+            else None
+        )
+
+        activity.append({
+            "kind": "completed",
+            "at": task.completed_at,
+            "title": f'Completaste "{task.name}"',
+            "context": (
+                primary_plan.name
+                if primary_plan
+                else "Tarea"
+            ),
+        })
+
+    for plan in recent_created_plans:
+        activity.append({
+            "kind": "plan",
+            "at": plan.created_at,
+            "title": f'Creaste el plan "{plan.name}"',
+            "context": plan.life_area.name,
+        })
+
+    activity.sort(
+        key=lambda item: item["at"],
+        reverse=True,
+    )
+
+    recent_activity = activity[:5]
+
+    # =========================================
+    # CONTEXT
+    # =========================================
+
+    context = {
+        "today": today,
+
+        "current_week": current_week,
+        "current_week_start": current_week_start,
+        "current_week_end": current_week_end,
+
+        "weekly_assigned_hours": weekly_assigned_hours,
+        "weekly_available_hours": weekly_available_hours,
+        "weekly_free_hours": weekly_free_hours,
+        "weekly_load_percent": weekly_load_percent,
+
+        "active_tasks_count": active_tasks_count,
+        "total_tasks_count": total_tasks_count,
+
+        "active_plans_count": active_plans_count,
+        "total_plans_count": total_plans_count,
+
+        "life_balance": life_balance,
+
+        "focus_plan": focus_plan,
+        "focus_actual_hours": focus_actual_hours,
+        "focus_remaining_hours": focus_remaining_hours,
+        "focus_next_deadline": focus_next_deadline,
+        "focus_days_remaining": focus_days_remaining,
+
+        "deadline_rows": deadline_rows,
+        "area_rows": area_rows,
+
+        "week_schedule": week_schedule,
+
+        "time_distribution": time_distribution,
+        "time_distribution_gradient": time_distribution_gradient,
+
+        "recent_activity": recent_activity,
+    }
+
+    return render(
+        request,
+        "life/dashboard.html",
+        context,
+    )
 
 
 @login_required
