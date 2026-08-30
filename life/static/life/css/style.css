@@ -4526,3 +4526,1130 @@ textarea.form-control {
     }
 
 }
+
+/* =========================================
+   PLANNING V2
+========================================= */
+
+.planning-week-shell {
+    margin-bottom: 34px;
+    padding: 22px;
+
+    background: #101013;
+
+    border: 1px solid #26262c;
+    border-radius: 18px;
+}
+
+
+/* =========================================
+   WEEK HEADER
+========================================= */
+
+.planning-week-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 24px;
+
+    margin-bottom: 20px;
+}
+
+
+.planning-title-line {
+    display: flex;
+    align-items: flex-end;
+
+    gap: 13px;
+}
+
+
+.planning-title-line h2 {
+    margin-top: 4px;
+
+    font-size: 20px;
+}
+
+
+.calendar-status-badge {
+    margin-bottom: 2px;
+
+    padding: 5px 9px;
+
+    border-radius: 999px;
+
+    background: #222227;
+
+    color: #777;
+
+    font-size: 8px;
+    font-weight: 800;
+}
+
+
+.calendar-status-badge.fixed {
+    background: #12301d;
+
+    color: #5ee584;
+}
+
+
+.planning-week-header-actions {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+}
+
+
+/* =========================================
+   WEEK NAVIGATION
+========================================= */
+
+.planning-week-navigation {
+    display: flex;
+    align-items: center;
+
+    min-height: 42px;
+
+    padding: 0 8px;
+
+    background: #18181c;
+
+    border: 1px solid #29292e;
+    border-radius: 10px;
+}
+
+
+.planning-week-nav-arrow {
+    width: 35px;
+    height: 35px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #bbb;
+
+    font-size: 22px;
+    text-decoration: none;
+}
+
+
+.planning-week-nav-arrow:hover {
+    color: #58d7df;
+}
+
+
+.planning-week-date {
+    min-width: 150px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 2px;
+
+    padding: 0 10px;
+}
+
+
+.planning-week-date span {
+    color: #58d7df;
+
+    font-size: 7px;
+    font-weight: 800;
+
+    letter-spacing: 1px;
+}
+
+
+.planning-week-date strong {
+    font-size: 10px;
+}
+
+
+.planning-add-task {
+    min-height: 42px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    padding: 0 18px;
+
+    background: #58d7df;
+
+    border-radius: 9px;
+
+    color: #071112;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    text-decoration: none;
+}
+
+
+/* =========================================
+   WEEK DAYS
+========================================= */
+
+.planning-week-days {
+    display: grid;
+
+    grid-template-columns:
+        repeat(7, minmax(0, 1fr));
+
+    gap: 10px;
+
+    overflow-x: 100%;
+
+    padding-bottom: 5px;
+
+    overflow-x: visible;
+}
+
+
+.planning-day-card {
+    min-height: 260px;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 14px;
+
+    background: #161619;
+
+    border: 1px solid #29292e;
+    border-radius: 13px;
+}
+
+
+.planning-day-card.has-work {
+    border-color: #36363c;
+}
+
+
+.planning-day-header {
+    display: flex;
+    justify-content: space-between;
+
+    gap: 10px;
+}
+
+
+.planning-day-header > div {
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+
+.planning-day-header strong {
+    font-size: 12px;
+}
+
+
+.planning-day-header span {
+    color: #777;
+
+    font-size: 8px;
+}
+
+
+.planning-day-menu {
+    width: 27px;
+    height: 27px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #202024;
+
+    border-radius: 7px;
+
+    color: #777;
+}
+
+
+.planning-day-hours {
+    display: flex;
+    align-items: baseline;
+
+    gap: 5px;
+
+    margin-top: 23px;
+    margin-bottom: 10px;
+}
+
+
+.planning-day-hours strong {
+    color: #58d7df;
+
+    font-size: 14px;
+}
+
+
+.planning-day-hours span {
+    color: #777;
+
+    font-size: 8px;
+}
+
+
+/* =========================================
+   SAVED TASKS
+========================================= */
+
+.planning-day-task-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 7px;
+
+    flex: 1;
+}
+
+
+.planning-saved-task {
+    position: relative;
+
+    padding: 10px;
+
+    background: #1e1e22;
+
+    border: 1px solid #303036;
+    border-radius: 8px;
+}
+
+
+.planning-allocation-form {
+    display: flex;
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+
+.planning-saved-task-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+}
+
+
+.planning-saved-task-name {
+    min-width: 0;
+
+    color: #eee;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+.planning-saved-task-name:hover {
+    color: #58d7df;
+}
+
+
+.planning-saved-hours {
+    display: flex;
+    align-items: center;
+
+    gap: 3px;
+}
+
+
+.planning-saved-hours input {
+    width: 43px;
+
+    padding: 4px;
+
+    background: #151518;
+
+    border: 1px solid #303035;
+    border-radius: 5px;
+
+    color: #ddd;
+
+    font-size: 9px;
+    text-align: center;
+}
+
+
+.planning-saved-hours span {
+    color: #777;
+
+    font-size: 8px;
+}
+
+
+.planning-saved-task-actions {
+    display: flex;
+
+    gap: 5px;
+}
+
+
+.planning-saved-task-actions select {
+    min-width: 0;
+    flex: 1;
+
+    padding: 5px;
+
+    background: #19191d;
+
+    border: 1px solid #303035;
+    border-radius: 5px;
+
+    color: #aaa;
+
+    font-size: 8px;
+}
+
+
+.planning-save-allocation {
+    width: 27px;
+
+    border: 1px solid #245b60;
+    border-radius: 5px;
+
+    background: #11272a;
+
+    color: #58d7df;
+
+    cursor: pointer;
+}
+
+
+.planning-remove-form {
+    position: absolute;
+
+    right: 6px;
+    bottom: -29px;
+}
+
+
+.planning-remove-form button {
+    display: none;
+}
+
+
+/* EMPTY */
+
+.planning-day-empty {
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    color: #555;
+
+    font-size: 9px;
+}
+
+
+.planning-day-empty-icon {
+    font-size: 24px;
+}
+
+
+/* =========================================
+   WEEK FOOTER
+========================================= */
+
+.planning-week-footer {
+    display: flex;
+    align-items: center;
+
+    gap: 20px;
+
+    margin-top: 16px;
+    padding-top: 13px;
+
+    border-top: 1px solid #29292e;
+
+    color: #777;
+
+    font-size: 9px;
+}
+
+
+/* =========================================
+   COORDINATOR
+========================================= */
+
+.planning-coordinator {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 2fr)
+        minmax(280px, 0.9fr);
+
+    gap: 15px;
+
+    margin-bottom: 42px;
+}
+
+
+.planning-coordinator-main,
+.planning-current-status {
+    padding: 22px;
+
+    background: #101013;
+
+    border: 1px solid #26262c;
+    border-radius: 16px;
+}
+
+
+.planning-coordinator-heading h2 {
+    margin-top: 5px;
+
+    font-size: 19px;
+}
+
+
+.planning-coordinator-heading p {
+    margin-top: 5px;
+
+    color: #777;
+
+    font-size: 10px;
+}
+
+
+/* =========================================
+   CONTROL PANEL
+========================================= */
+
+.planning-control-panel {
+    margin-top: 16px;
+}
+
+
+.planning-availability-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 18px;
+
+    background: #161619;
+
+    border: 1px solid #29292e;
+    border-bottom: none;
+
+    border-radius: 11px 11px 0 0;
+}
+
+
+.planning-availability-header > div:first-child {
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+
+.planning-availability-header span {
+    color: #777;
+
+    font-size: 8px;
+}
+
+
+.planning-availability-header strong {
+    font-size: 16px;
+}
+
+
+.planning-availability-number {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+
+    gap: 3px;
+}
+
+
+.planning-availability-number strong {
+    color: #58d7df;
+
+    font-size: 17px;
+}
+
+
+/* SLIDER */
+
+.planning-slider-v2 {
+    display: grid;
+
+    grid-template-columns:
+        auto 1fr auto;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 5px 18px 18px;
+
+    background: #161619;
+}
+
+
+.planning-slider-v2 span {
+    color: #777;
+
+    font-size: 9px;
+}
+
+
+.planning-slider-v2 input[type="range"] {
+    width: 100%;
+}
+
+
+/* CONTROLS */
+
+.planning-controls-v2 {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 17px 18px;
+
+    background: #161619;
+
+    border: 1px solid #29292e;
+    border-top: none;
+
+    border-radius: 0 0 11px 11px;
+}
+
+
+.planning-control-label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #777;
+
+    font-size: 8px;
+    font-weight: 700;
+}
+
+
+.planning-day-toggles {
+    display: flex;
+
+    gap: 7px;
+}
+
+
+.planning-generate-v2 {
+    min-height: 40px;
+
+    padding: 0 18px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #58d7df;
+
+    color: #071112;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+
+/* =========================================
+   CONFIG STATS
+========================================= */
+
+.planning-config-stats {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    margin-top: 12px;
+}
+
+
+.planning-config-stats > div {
+    display: flex;
+    align-items: center;
+
+    gap: 11px;
+
+    padding: 12px 16px;
+
+    border-right: 1px solid #29292e;
+}
+
+
+.planning-config-stats > div:last-child {
+    border-right: none;
+}
+
+
+.planning-config-icon {
+    width: 32px;
+    height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    background: #102e33;
+
+    border-radius: 50%;
+
+    color: #58d7df;
+}
+
+
+.planning-config-stats strong,
+.planning-config-stats span {
+    display: block;
+}
+
+
+.planning-config-stats strong {
+    font-size: 10px;
+}
+
+
+.planning-config-stats div div span {
+    margin-top: 2px;
+
+    color: #666;
+
+    font-size: 8px;
+}
+
+
+/* =========================================
+   CURRENT STATUS
+========================================= */
+
+.planning-current-heading p {
+    margin-top: 5px;
+
+    color: #777;
+
+    font-size: 9px;
+}
+
+
+.planning-status-list {
+    margin-top: 18px;
+
+    overflow: hidden;
+
+    background: #161619;
+
+    border: 1px solid #29292e;
+    border-radius: 10px;
+}
+
+
+.planning-status-row {
+    display: grid;
+
+    grid-template-columns:
+        30px
+        minmax(0, 1fr)
+        auto;
+
+    align-items: center;
+
+    gap: 10px;
+
+    min-height: 60px;
+
+    padding: 10px 14px;
+
+    border-bottom: 1px solid #29292e;
+}
+
+
+.planning-status-row:last-child {
+    border-bottom: none;
+}
+
+
+.planning-status-icon {
+    color: #58d7df;
+
+    font-size: 16px;
+}
+
+
+.planning-status-row > span:nth-child(2) {
+    color: #999;
+
+    font-size: 9px;
+}
+
+
+.planning-status-row > strong {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+
+    font-size: 13px;
+}
+
+
+.planning-status-row small {
+    margin-top: 2px;
+
+    color: #58d7df;
+
+    font-size: 7px;
+}
+
+
+/* FREE SPACE */
+
+.planning-free-capacity {
+    display: flex;
+
+    gap: 12px;
+
+    margin-top: 12px;
+    padding: 15px;
+
+    background: #151224;
+
+    border: 1px solid #32265a;
+    border-radius: 9px;
+}
+
+
+.planning-free-capacity > span {
+    color: #9d88ff;
+
+    font-size: 19px;
+}
+
+
+.planning-free-capacity strong {
+    color: #b7a8ff;
+
+    font-size: 10px;
+}
+
+
+.planning-free-capacity p {
+    margin-top: 3px;
+
+    color: #777;
+
+    font-size: 8px;
+}
+
+
+.planning-status-empty {
+    margin-top: 18px;
+    padding: 18px;
+
+    background: #161619;
+
+    border: 1px dashed #303035;
+    border-radius: 10px;
+}
+
+
+.planning-status-empty strong {
+    font-size: 10px;
+}
+
+
+.planning-status-empty p {
+    margin-top: 5px;
+
+    color: #666;
+
+    font-size: 8px;
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 1100px) {
+
+    .planning-week-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+
+    .planning-coordinator {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+
+@media (max-width: 750px) {
+
+    .planning-week-header-actions {
+        width: 100%;
+
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+
+    .planning-week-navigation {
+        justify-content: space-between;
+    }
+
+
+    .planning-add-task {
+        width: 100%;
+    }
+
+
+    .planning-config-stats {
+        grid-template-columns: 1fr;
+    }
+
+
+    .planning-config-stats > div {
+        border-right: none;
+        border-bottom: 1px solid #29292e;
+    }
+
+
+    .planning-config-stats > div:last-child {
+        border-bottom: none;
+    }
+
+}
+
+.planning-day-add {
+    width: 28px;
+    height: 28px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid #303035;
+    border-radius: 7px;
+
+    background: #202024;
+
+    color: #777;
+
+    font-size: 17px;
+
+    cursor: pointer;
+}
+
+.planning-day-add:hover {
+    border-color: #58d7df;
+
+    background: #11272a;
+
+    color: #58d7df;
+}
+/* =========================================
+   ADD TASK TO DAY MODAL
+========================================= */
+
+.day-task-modal {
+    position: fixed;
+    inset: 0;
+
+    z-index: 9999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 24px;
+}
+
+
+/* MUY IMPORTANTE:
+   respeta el atributo hidden */
+.day-task-modal[hidden] {
+    display: none;
+}
+
+
+.day-task-modal-backdrop {
+    position: absolute;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(4px);
+}
+
+
+.day-task-modal-card {
+    position: relative;
+    z-index: 1;
+
+    width: min(460px, 100%);
+
+    padding: 24px;
+
+    background: #18181b;
+
+    border: 1px solid #34343a;
+    border-radius: 16px;
+
+    box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.55);
+}
+
+
+.day-task-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 24px;
+}
+
+
+.day-task-modal-header h3 {
+    margin-top: 5px;
+
+    font-size: 20px;
+}
+
+
+.day-task-modal-close {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    background: #111114;
+
+    border: 1px solid #303035;
+    border-radius: 50%;
+
+    color: #aaa;
+
+    font-size: 20px;
+
+    cursor: pointer;
+}
+
+
+.day-task-modal-close:hover {
+    border-color: #58d7df;
+    color: #58d7df;
+}
+
+
+/* FORM */
+
+.day-task-modal-card form {
+    display: grid;
+    grid-template-columns: 1fr 110px;
+
+    gap: 16px;
+}
+
+
+.day-task-modal-card label {
+    display: block;
+
+    margin-bottom: -10px;
+
+    color: #777;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+}
+
+
+.day-task-modal-card label:first-of-type {
+    grid-column: 1;
+}
+
+
+.day-task-modal-card label:nth-of-type(2) {
+    grid-column: 2;
+}
+
+
+.day-task-modal-card select,
+.day-task-modal-card input[type="number"] {
+    width: 100%;
+    height: 42px;
+
+    padding: 0 12px;
+
+    background: #101013;
+
+    border: 1px solid #303035;
+    border-radius: 8px;
+
+    color: #eee;
+
+    outline: none;
+}
+
+
+.day-task-modal-card select:focus,
+.day-task-modal-card input:focus {
+    border-color: #58d7df;
+}
+
+
+.day-task-modal-card .planning-generate-v2 {
+    grid-column: 1 / -1;
+
+    margin-top: 8px;
+}

@@ -1298,7 +1298,6 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 from .models import LifeArea, Task
-@login_required
 def planning(request):
     year = int(
         request.GET.get("year", date.today().year)
@@ -1494,9 +1493,9 @@ def planning(request):
     )
 
 
-            # -------------------------
-        # WEEKLY PLANNER
-        # -------------------------
+    # -------------------------
+    # WEEKLY PLANNER
+    # -------------------------
 
     today = date.today()
 
@@ -1559,12 +1558,91 @@ def planning(request):
         if current_week
         else WeeklyTaskAllocation.objects.none()
     )
+
+    # =========================================
+    # CALENDARIO FIJADO / RESUMEN SEMANAL
+    # =========================================
+
+    fixed_allocations = list(fixed_allocations)
+
     allocations_by_date = defaultdict(list)
 
     for allocation in fixed_allocations:
         allocations_by_date[
             allocation.planned_date
         ].append(allocation)
+
+    # -------------------------
+    # MÉTRICAS DEL CALENDARIO
+    # -------------------------
+
+    saved_total_hours = sum(
+        (
+            allocation.planned_hours
+            or Decimal("0")
+            for allocation in fixed_allocations
+        ),
+        Decimal("0"),
+    )
+
+    saved_task_count = len({
+        allocation.task_id
+        for allocation in fixed_allocations
+    })
+
+    saved_days_with_work = len({
+        allocation.planned_date
+        for allocation in fixed_allocations
+        if allocation.planned_date
+    })
+
+    if (
+        current_week
+        and current_week.available_hours is not None
+    ):
+        saved_available_hours = Decimal(
+            str(current_week.available_hours)
+        )
+    else:
+        saved_available_hours = Decimal("0")
+
+    saved_free_hours = max(
+        Decimal("0"),
+        saved_available_hours - saved_total_hours,
+    )
+
+    if saved_available_hours > 0:
+        saved_load_percent = min(
+            Decimal("100"),
+            (
+                saved_total_hours
+                / saved_available_hours
+                * Decimal("100")
+            ),
+        )
+    else:
+        saved_load_percent = Decimal("0")
+
+    if saved_days_with_work > 0:
+        saved_daily_average = (
+            saved_total_hours
+            / Decimal(saved_days_with_work)
+        )
+    else:
+        saved_daily_average = Decimal("0")
+
+    calendar_is_fixed = bool(
+        current_week
+        and current_week.planning_mode
+        in {
+            Week.PlanningMode.OPTIMIZED,
+            Week.PlanningMode.MANUAL,
+        }
+    )
+
+    # -------------------------
+    # CALENDARIO POR DÍA
+    # -------------------------
 
     saved_schedule = []
 
@@ -1577,20 +1655,77 @@ def planning(request):
         "Sábado",
         "Domingo",
     ]
+
     for index in range(7):
         current_date = (
-            week_start + timedelta(days=index)
+            week_start
+            + timedelta(days=index)
+        )
+
+        day_allocations = (
+            allocations_by_date.get(
+                current_date,
+                [],
+            )
+        )
+
+        used_hours = sum(
+            (
+                allocation.planned_hours
+                or Decimal("0")
+                for allocation in day_allocations
+            ),
+            Decimal("0"),
         )
 
         saved_schedule.append({
             "date": current_date,
             "name": day_names[index],
-            "allocations": allocations_by_date.get(
-                current_date,
-                [],
-            ),
+            "allocations": day_allocations,
+            "used_hours": used_hours,
+            "has_work": bool(day_allocations),
+            "is_weekend": index >= 5,
         })
 
+    
+
+
+    # =========================================
+    # TAREAS DISPONIBLES PARA AÑADIR MANUALMENTE
+    # =========================================
+
+    calendar_available_tasks = (
+        Task.objects
+        .filter(
+            plans__life_area__user=request.user
+        )
+        .exclude(
+            status__in=[
+                Task.Status.COMPLETED,
+                Task.Status.CANCELLED,
+            ]
+        )
+        .prefetch_related(
+            "plans",
+            "plans__life_area",
+        )
+        .distinct()
+        .order_by(
+            "due_date",
+            "name",
+        )
+    )
+
+
+    # =========================================
+    # FORMULARIO DEL PLANNER
+    # =========================================
+
+    planner_form = WeeklyPlannerForm(
+        request.POST or None
+    )
+
+    planner_result = None
 
     planner_form = WeeklyPlannerForm(
         request.POST or None
@@ -1777,6 +1912,24 @@ def planning(request):
             return redirect(
                 f"{reverse('life:planning')}?week={week_offset}"
             )
+
+        calendar_available_tasks = (
+            Task.objects
+            .filter(
+                plans__life_area__user=request.user
+            )
+            .exclude(
+                status__in=[
+                    Task.Status.COMPLETED,
+                    Task.Status.CANCELLED,
+                ]
+            )
+            .distinct()
+            .order_by(
+                "due_date",
+                "name",
+            )
+        )
     context = {
         "year": year,
         "previous_year": year - 1,
@@ -1802,6 +1955,17 @@ def planning(request):
 
         "saved_schedule": saved_schedule,
 
+        "calendar_is_fixed": calendar_is_fixed,
+
+        "saved_total_hours": saved_total_hours,
+        "saved_available_hours": saved_available_hours,
+        "saved_free_hours": saved_free_hours,
+        "saved_load_percent": saved_load_percent,
+
+        "saved_task_count": saved_task_count,
+        "saved_days_with_work": saved_days_with_work,
+        "saved_daily_average": saved_daily_average,
+
         "week_offset": week_offset,
         "previous_week_offset": previous_week_offset,
         "next_week_offset": next_week_offset,
@@ -1811,6 +1975,8 @@ def planning(request):
 
         "is_current_week": is_current_week,
         "can_plan_week": can_plan_week,
+
+        "calendar_available_tasks": calendar_available_tasks,
     }
 
     return render(
@@ -1819,6 +1985,104 @@ def planning(request):
         context,
     )
 
+@login_required
+def allocation_create(request):
+
+    if request.method != "POST":
+        return redirect("life:planning")
+
+    task = get_object_or_404(
+        Task.objects.filter(
+            plans__life_area__user=request.user
+        ).distinct(),
+        pk=request.POST.get("task_id"),
+    )
+
+    try:
+        planned_date = date.fromisoformat(
+            request.POST.get("planned_date")
+        )
+
+        planned_hours = Decimal(
+            request.POST.get(
+                "planned_hours",
+                "0.5",
+            )
+        )
+
+        week_offset = int(
+            request.POST.get(
+                "week_offset",
+                0,
+            )
+        )
+
+    except (
+        TypeError,
+        ValueError,
+        InvalidOperation,
+    ):
+        return redirect("life:planning")
+
+    if planned_hours < Decimal("0.5"):
+        planned_hours = Decimal("0.5")
+
+    monday = (
+        planned_date
+        - timedelta(
+            days=planned_date.weekday()
+        )
+    )
+
+    week, created = Week.objects.get_or_create(
+        user=request.user,
+        week_start=monday,
+    )
+
+    existing = (
+        WeeklyTaskAllocation.objects
+        .filter(
+            week=week,
+            task=task,
+            planned_date=planned_date,
+        )
+        .first()
+    )
+
+    if existing:
+
+        existing.planned_hours += planned_hours
+
+        existing.save(
+            update_fields=[
+                "planned_hours"
+            ]
+        )
+
+    else:
+
+        WeeklyTaskAllocation.objects.create(
+            week=week,
+            task=task,
+            planned_date=planned_date,
+            planned_hours=planned_hours,
+        )
+
+    if week.planning_mode == Week.PlanningMode.PASSIVE:
+
+        week.planning_mode = (
+            Week.PlanningMode.MANUAL
+        )
+
+        week.save(
+            update_fields=[
+                "planning_mode"
+            ]
+        )
+
+    return redirect(
+        f"{reverse('life:planning')}?week={week_offset}"
+    )
 @login_required
 def allocation_move(request, pk):
 

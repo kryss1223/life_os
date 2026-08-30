@@ -834,7 +834,7 @@
 
     margin-top: 20px;
 
-    font-size: 17px;
+    font-size: 100px;
 }
 
 
@@ -1376,4 +1376,34 @@
     color: #58d7df;
 
     cursor: pointer;
+}
+
+.planning-day-add {
+    width: 28px;
+    height: 28px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid #303035;
+    border-radius: 7px;
+
+    background: #202024;
+
+    color: #777;
+
+    font-size: 17px;
+
+    cursor: pointer;
+}
+
+.planning-day-add:hover {
+    border-color: #58d7df;
+
+    background: #11272a;
+
+    color: #58d7df;
 }
