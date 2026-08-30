@@ -26,7 +26,7 @@ body {
 /* SIDEBAR */
 
 .sidebar {
-    width: 230px;
+    width: fit-content;
     background: #151518;
     border-right: 1px solid #29292e;
 
@@ -46,12 +46,14 @@ body {
 .sidebar nav {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 2px;
 }
+
+
 
 .sidebar nav a {
     padding: 11px 14px;
-
+    
     color: #999;
     text-decoration: none;
 
@@ -67,6 +69,14 @@ body {
 .sidebar-bottom {
     font-size: 14px;
     color: #777;
+}
+
+
+@media (max-width: 750px) {
+    .sidebar nav {
+        display: block;
+        padding: 7px;
+    }
 }
 
 
