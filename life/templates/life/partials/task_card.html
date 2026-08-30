@@ -1,0 +1,138 @@
+<article
+    class="
+        task-dashboard-card
+
+        {% if item.task.status == 'COMPLETED' %}
+            task-completed
+
+        {% elif item.is_urgent %}
+            task-urgent
+
+        {% elif item.task.status == 'IN_PROGRESS' %}
+            task-progress
+
+        {% elif item.task.status == 'PENDING' %}
+            task-pending
+        {% endif %}
+    "
+>
+
+    <div class="task-dashboard-main">
+
+        <div class="task-check">
+
+            {% if item.task.status == 'COMPLETED' %}
+                ✓
+            {% endif %}
+
+        </div>
+
+
+        <div class="task-dashboard-title">
+
+            <a href="{% url 'life:task_detail' item.task.pk %}">
+                {{ item.task.name }}
+            </a>
+
+
+            <div class="task-plan-list">
+
+                {% for plan in item.task.plans.all %}
+
+                    <span>
+                        {{ plan.name }}
+                    </span>
+
+                {% endfor %}
+
+            </div>
+
+
+            <div class="task-deadline">
+
+                {% if item.task.due_date %}
+
+                    {% if item.is_overdue %}
+
+                        <span class="deadline-overdue">
+                            Venció el
+                            {{ item.task.due_date|date:"d M Y" }}
+                        </span>
+
+                    {% else %}
+
+                        <span>
+                            Vence el
+                            {{ item.task.due_date|date:"d M Y" }}
+                        </span>
+
+                    {% endif %}
+
+                {% else %}
+
+                    <span>
+                        Sin fecha límite
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="task-dashboard-hours">
+
+        <span>Horas</span>
+
+        <strong>
+            {{ item.task.actual_hours|floatformat:1 }}h
+
+            <small>
+                /
+                {{ item.task.estimated_hours|floatformat:1 }}h
+            </small>
+        </strong>
+
+    </div>
+
+
+    <div class="task-dashboard-progress">
+
+        <span>
+            Progreso
+        </span>
+
+        <strong>
+            {{ item.progress_percent }}%
+        </strong>
+
+
+        <div class="task-list-progress-track">
+
+            <div
+                class="task-list-progress-fill"
+                style="width: {{ item.progress_percent }}%;"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+    <div class="task-dashboard-status">
+
+        <span
+            class="
+                task-status-pill
+                status-{{ item.task.status|lower }}
+            "
+        >
+            {{ item.task.get_status_display }}
+        </span>
+
+    </div>
+
+</article>

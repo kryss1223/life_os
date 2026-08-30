@@ -3,18 +3,35 @@
 {% block title %}{{ plan.name }} | Life OS{% endblock %}
 
 {% block content %}
+<header class="plan-detail-header-v2">
 
-<header class="plan-detail-hero">
+    <div class="plan-detail-header-main">
 
-    <div class="plan-detail-main">
+        <a
+            href="{% url 'life:plan_list' %}"
+            class="plan-detail-back"
+        >
+            ←
+            <span>PLAN DETAIL</span>
+        </a>
 
-        <div class="plan-detail-eyebrow">
 
-            <span class="eyebrow">
+        <div class="plan-detail-context">
+
+            <span>
                 {{ plan.life_area.name }}
             </span>
 
-            <span class="plan-detail-status status-{{ plan.status|lower }}">
+            <span class="plan-detail-context-divider">
+                /
+            </span>
+
+            <span
+                class="
+                    plan-detail-status-v2
+                    status-{{ plan.status|lower }}
+                "
+            >
                 {{ plan.get_status_display }}
             </span>
 
@@ -27,61 +44,54 @@
 
 
         {% if plan.description %}
-            <p>
+
+            <p class="plan-detail-description-v2">
                 {{ plan.description }}
             </p>
+
+        {% else %}
+
+            <p class="plan-detail-description-v2 empty-text">
+                Sin descripción.
+            </p>
+
         {% endif %}
 
 
-        <div class="plan-detail-meta">
+        <div class="plan-detail-meta-v2">
 
-            <span>
-                Importancia
-                <strong>{{ plan.importance_weight }}</strong>
-            </span>
-
-
-            {% if plan.start_date %}
-                <span>
-                    Inicio
-                    <strong>
-                        {{ plan.start_date|date:"d M Y" }}
-                    </strong>
-                </span>
-            {% endif %}
-
-
-            {% if plan.target_date %}
-                <span>
-                    Objetivo
-                    <strong>
-                        {{ plan.target_date|date:"d M Y" }}
-                    </strong>
-                </span>
-            {% endif %}
-
-        </div>
-
-
-        <div class="plan-main-progress">
-
-            <div class="plan-main-progress-info">
-
-                <span>Progreso del plan</span>
+            <div>
+                <span>Importancia</span>
 
                 <strong>
-                    {{ plan.progress|floatformat:0 }}%
+                    {{ plan.importance_weight }}
                 </strong>
-
             </div>
 
-            <div class="plan-main-progress-track">
 
-                <div
-                    class="plan-main-progress-fill"
-                    style="width: {{ plan.progress }}%;"
-                ></div>
+            <div>
+                <span>Inicio</span>
 
+                <strong>
+                    {% if plan.start_date %}
+                        {{ plan.start_date|date:"d M Y" }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </strong>
+            </div>
+
+
+            <div>
+                <span>Objetivo</span>
+
+                <strong>
+                    {% if plan.target_date %}
+                        {{ plan.target_date|date:"d M Y" }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </strong>
             </div>
 
         </div>
@@ -89,27 +99,37 @@
     </div>
 
 
-    <div class="detail-actions">
+    <div class="plan-detail-actions-v2">
 
         <a
             href="{% url 'life:plan_edit' plan.pk %}"
-            class="button button-secondary"
+            class="plan-detail-action-v2 plan-detail-edit-v2"
         >
+            ✎
             Editar
         </a>
+
 
         <form
             method="POST"
             action="{% url 'life:plan_delete' plan.pk %}"
-            onsubmit="return confirm('¿Eliminar este plan?');"
+            onsubmit="
+                return confirm(
+                    '¿Eliminar este plan?'
+                );
+            "
         >
 
             {% csrf_token %}
 
             <button
                 type="submit"
-                class="button button-danger"
+                class="
+                    plan-detail-action-v2
+                    plan-detail-delete-v2
+                "
             >
+                ×
                 Eliminar
             </button>
 
@@ -119,31 +139,68 @@
 
 </header>
 
+<section class="plan-progress-overview">
+
+    <div class="plan-progress-overview-top">
+
+        <span>
+            Progreso del plan
+        </span>
+
+        <strong>
+            {{ plan.progress|floatformat:0 }}%
+        </strong>
+
+    </div>
+
+
+    <div class="plan-progress-overview-track">
+
+        <div
+            class="plan-progress-overview-fill"
+            style="width: {{ plan.progress }}%;"
+        ></div>
+
+    </div>
+
+</section>
+
 
 <div class="metric-grid plan-metrics">
 
     <div class="metric-card">
-        <span>Tareas completadas</span>
+
+        <span>
+            Tareas completadas
+        </span>
 
         <strong>
             {{ completed_tasks }}
             /
             {{ total_tasks }}
         </strong>
+
     </div>
 
 
     <div class="metric-card">
-        <span>Horas registradas</span>
+
+        <span>
+            Horas registradas
+        </span>
 
         <strong>
             {{ total_actual_hours|floatformat:1 }}h
         </strong>
+
     </div>
 
 
     <div class="metric-card">
-        <span>Horas restantes</span>
+
+        <span>
+            Horas restantes
+        </span>
 
         <strong>
             {{ remaining_hours|floatformat:1 }}h
@@ -152,11 +209,15 @@
         <small>
             de {{ plan.estimated_hours|floatformat:1 }}h estimadas
         </small>
+
     </div>
 
 
     <div class="metric-card">
-        <span>Tiempo restante</span>
+
+        <span>
+            Tiempo restante
+        </span>
 
         <strong>
 
@@ -179,144 +240,41 @@
             {% endif %}
 
         </strong>
+
     </div>
 
 </div>
 
+
+<section class="plan-tasks-section">
+    ...
+</section>
+
 <section class="plan-tasks-section">
 
-    <div class="section-title section-title-row">
+    <div class="task-dashboard-list">
 
-        <div>
+    {% for item in task_rows %}
 
-            <span class="eyebrow">
-                PLAN WORK
+        {% include "life/partials/task_card.html" with item=item %}
+
+    {% empty %}
+
+        <div class="task-list-empty">
+
+            <strong>
+                No hay tareas aquí.
+            </strong>
+
+            <span>
+                Prueba otro filtro o crea una nueva.
             </span>
-
-            <h2>
-                Tareas
-            </h2>
 
         </div>
 
+    {% endfor %}
 
-        <a
-            href="{% url 'life:task_create' %}"
-            class="button"
-        >
-            + Nueva tarea
-        </a>
-
-    </div>
-
-
-    <div class="plan-task-list">
-
-        {% for item in task_rows %}
-
-            <a
-                href="{% url 'life:task_detail' item.task.pk %}"
-                class="
-                    plan-task-card
-                    task-status-{{ item.task.status|lower }}
-                "
-            >
-
-                <div class="plan-task-top">
-
-                    <div>
-
-                        <h3>
-                            {{ item.task.name }}
-                        </h3>
-
-                        {% if item.task.description %}
-
-                            <p>
-                                {{ item.task.description|truncatechars:90 }}
-                            </p>
-
-                        {% endif %}
-
-                    </div>
-
-
-                    <span class="task-status">
-                        {{ item.task.get_status_display }}
-                    </span>
-
-                </div>
-
-
-                <div class="plan-task-data">
-
-                    <span>
-                        <small>IMPACTO</small>
-
-                        <strong>
-                            {{ item.impact|floatformat:0 }}%
-                        </strong>
-                    </span>
-
-
-                    <span>
-                        <small>HORAS</small>
-
-                        <strong>
-                            {{ item.task.actual_hours|floatformat:1 }}
-                            /
-                            {{ item.task.estimated_hours|floatformat:1 }}h
-                        </strong>
-                    </span>
-
-
-                    <span>
-                        <small>RESTANTES</small>
-
-                        <strong>
-                            {{ item.remaining_hours|floatformat:1 }}h
-                        </strong>
-                    </span>
-
-
-                    <span>
-                        <small>DEADLINE</small>
-
-                        <strong>
-
-                            {% if item.task.due_date %}
-                                {{ item.task.due_date|date:"d M Y" }}
-                            {% else %}
-                                —
-                            {% endif %}
-
-                        </strong>
-                    </span>
-
-                </div>
-
-
-                <div class="task-time-progress">
-
-                    <div
-                        class="task-time-progress-fill"
-                        style="width: {{ item.time_progress }}%;"
-                    ></div>
-
-                </div>
-
-            </a>
-
-
-        {% empty %}
-
-            <div class="plan-empty">
-                Todavía no hay tareas asociadas a este plan.
-            </div>
-
-        {% endfor %}
-
-    </div>
+</div>
 
 </section>
 

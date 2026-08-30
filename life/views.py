@@ -398,7 +398,6 @@ def plan_list(request):
         context,
     )
 
-
 @login_required
 def plan_detail(request, pk):
     plan = get_object_or_404(
@@ -411,8 +410,16 @@ def plan_detail(request, pk):
         plan.tasks
         .all()
         .distinct()
-        .prefetch_related("impacts")
-        .order_by("status", "due_date", "name")
+        .prefetch_related(
+            "impacts",
+            "plans",
+            "plans__life_area",
+        )
+        .order_by(
+            "status",
+            "due_date",
+            "name",
+        )
     )
 
     tracking = (
@@ -459,6 +466,8 @@ def plan_detail(request, pk):
     # INFO DETALLADA DE TAREAS
     # =========================
 
+    urgent_limit = today + timedelta(days=3)
+
     task_rows = []
 
     for task in tasks:
@@ -484,8 +493,12 @@ def plan_detail(request, pk):
             estimated - actual,
         )
 
+        # =========================
+        # PROGRESO POR HORAS
+        # =========================
+
         if estimated > 0:
-            time_progress = min(
+            progress = min(
                 Decimal("100"),
                 (
                     actual
@@ -494,24 +507,59 @@ def plan_detail(request, pk):
                 ),
             )
         else:
-            time_progress = Decimal("0")
+            progress = Decimal("0")
 
         if task.status == Task.Status.COMPLETED:
-            time_progress = Decimal("100")
+            progress = Decimal("100")
+
+        # =========================
+        # DEADLINE
+        # =========================
+
+        is_overdue = bool(
+            task.due_date
+            and task.due_date < today
+            and task.status not in [
+                Task.Status.COMPLETED,
+                Task.Status.CANCELLED,
+            ]
+        )
+
+        is_urgent = bool(
+            task.due_date
+            and today <= task.due_date <= urgent_limit
+            and task.status not in [
+                Task.Status.COMPLETED,
+                Task.Status.CANCELLED,
+            ]
+        )
+
+        # =========================
+        # ROW
+        # =========================
 
         task_rows.append({
             "task": task,
 
+            # Campos comunes con task_list
+            "progress_percent": round(
+                float(progress)
+            ),
+            "is_urgent": is_urgent,
+            "is_overdue": is_overdue,
+
+            # Campos específicos del plan
             "impact": (
                 impact.impact_percent
                 if impact
                 else Decimal("0")
             ),
-
             "remaining_hours": task_remaining,
-
-            "time_progress": time_progress,
         })
+
+    # =========================
+    # CONTEXT
+    # =========================
 
     context = {
         "plan": plan,

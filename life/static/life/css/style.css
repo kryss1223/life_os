@@ -4235,3 +4235,294 @@ textarea.form-control {
     }
 
 }
+
+/* =========================================
+   PLAN DETAIL HEADER V2
+========================================= */
+
+.plan-detail-header-v2 {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 40px;
+
+    margin-bottom: 26px;
+}
+
+
+.plan-detail-header-main {
+    width: 100%;
+    max-width: 900px;
+}
+
+
+.plan-detail-back {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 23px;
+
+    color: #777;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: 1.5px;
+
+    text-decoration: none;
+}
+
+
+.plan-detail-back:hover {
+    color: #58d7df;
+}
+
+
+.plan-detail-context {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+
+    gap: 9px;
+
+    margin-bottom: 10px;
+
+    color: #777;
+
+    font-size: 10px;
+
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+
+.plan-detail-context-divider {
+    color: #444;
+}
+
+
+.plan-detail-status-v2 {
+    padding: 5px 10px;
+
+    background: #252529;
+
+    border-radius: 999px;
+
+    color: #aaa;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+
+.plan-detail-status-v2.status-active {
+    background: #102e33;
+    color: #58d7df;
+}
+
+
+.plan-detail-status-v2.status-completed {
+    background: #12301d;
+    color: #5ee584;
+}
+
+
+.plan-detail-status-v2.status-paused {
+    background: #332511;
+    color: #f5a623;
+}
+
+
+.plan-detail-status-v2.status-cancelled {
+    opacity: 0.5;
+}
+
+
+.plan-detail-header-v2 h1 {
+    margin: 0;
+
+    font-size: 36px;
+    line-height: 1.15;
+}
+
+
+.plan-detail-description-v2 {
+    max-width: 720px;
+
+    margin-top: 12px;
+
+    color: #8a8a90;
+
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+
+.plan-detail-meta-v2 {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 28px;
+
+    margin-top: 20px;
+}
+
+
+.plan-detail-meta-v2 > div {
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+
+.plan-detail-meta-v2 span {
+    color: #666;
+
+    font-size: 9px;
+
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+}
+
+
+.plan-detail-meta-v2 strong {
+    color: #bbb;
+
+    font-size: 11px;
+}
+
+
+/* ACTIONS */
+
+.plan-detail-actions-v2 {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    padding-top: 44px;
+}
+
+
+.plan-detail-action-v2 {
+    height: 40px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    padding: 0 17px;
+
+    border: 1px solid #323238;
+    border-radius: 8px;
+
+    background: #19191d;
+
+    color: #ddd;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    text-decoration: none;
+
+    cursor: pointer;
+}
+
+
+.plan-detail-action-v2:hover {
+    border-color: #555;
+}
+
+
+.plan-detail-delete-v2 {
+    border-color: #63252e;
+
+    background: #321419;
+
+    color: #ff6675;
+}
+
+
+/* =========================================
+   PLAN PROGRESS
+========================================= */
+
+.plan-progress-overview {
+    margin-bottom: 26px;
+
+    padding: 18px 20px;
+
+    background: #161619;
+
+    border: 1px solid #29292e;
+    border-radius: 13px;
+}
+
+
+.plan-progress-overview-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+
+.plan-progress-overview-top span {
+    color: #777;
+
+    font-size: 10px;
+}
+
+
+.plan-progress-overview-top strong {
+    color: #58d7df;
+
+    font-size: 18px;
+}
+
+
+.plan-progress-overview-track {
+    width: 100%;
+    height: 6px;
+
+    margin-top: 12px;
+
+    overflow: hidden;
+
+    background: #29292e;
+
+    border-radius: 999px;
+}
+
+
+.plan-progress-overview-fill {
+    height: 100%;
+
+    background: #58d7df;
+
+    border-radius: inherit;
+}
+
+
+@media (max-width: 750px) {
+
+    .plan-detail-header-v2 {
+        flex-direction: column;
+
+        gap: 18px;
+    }
+
+
+    .plan-detail-actions-v2 {
+        padding-top: 0;
+    }
+
+}
