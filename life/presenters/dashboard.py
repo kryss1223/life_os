@@ -83,3 +83,55 @@ def recent_activity_items(*, tasks, plans):
     for plan in plans.order_by("-created_at")[:5]:
         activity.append({"kind": "plan", "at": plan.created_at, "title": f'Creaste el plan "{plan.name}"', "context": plan.life_area.name})
     return sorted(activity, key=lambda item: item["at"], reverse=True)[:5]
+
+
+def weekly_calendar_visuals(*, allocations, areas, week_start, assigned_hours):
+    names = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+    tones = {area.pk: f"tone-{(index % 5) + 1}" for index, area in enumerate(areas)}
+    by_date = {}
+    distribution = {}
+    for allocation in allocations:
+        impacts = list(allocation.task.impacts.all())
+        primary = max(impacts, key=lambda item: item.impact_percent, default=None)
+        if primary:
+            area = primary.plan.life_area
+        else:
+            plans = list(allocation.task.plans.all())
+            area = plans[0].life_area if plans else None
+        area_id = area.pk if area else None
+        area_name = area.name if area else "Sin área"
+        tone = tones.get(area_id, "tone-neutral")
+        hours = allocation.planned_hours or Decimal("0")
+        row = {"allocation": allocation, "task": allocation.task, "hours": hours, "area_name": area_name, "tone": tone}
+        by_date.setdefault(allocation.planned_date, []).append(row)
+        key = (area_id, area_name, tone)
+        distribution[key] = distribution.get(key, Decimal("0")) + hours
+
+    schedule = []
+    for index, name in enumerate(names):
+        current_date = week_start + timedelta(days=index)
+        rows = by_date.get(current_date, [])
+        schedule.append({
+            "name": name,
+            "date": current_date,
+            "allocations": rows[:3],
+            "extra_count": max(0, len(rows) - 3),
+            "total_hours": sum((row["hours"] for row in rows), Decimal("0")),
+        })
+
+    palette = {"tone-1": "#58d7df", "tone-2": "#8b5cf6", "tone-3": "#f2b632", "tone-4": "#34a853", "tone-5": "#87909d", "tone-neutral": "#5f6772"}
+    time_distribution = []
+    for (area_id, area_name, tone), hours in sorted(distribution.items(), key=lambda item: item[1], reverse=True):
+        percent = hours / assigned_hours * 100 if assigned_hours > 0 else Decimal("0")
+        time_distribution.append({"area_id": area_id, "name": area_name, "tone": tone, "hours": hours, "percent": percent})
+    segments = []
+    start = Decimal("0")
+    for row in time_distribution:
+        end = start + row["percent"]
+        segments.append(f"{palette[row['tone']]} {float(start):.2f}% {float(end):.2f}%")
+        start = end
+    return {
+        "week_schedule": schedule,
+        "time_distribution": time_distribution,
+        "time_distribution_gradient": ", ".join(segments) if segments else "#2a2a2f 0% 100%",
+    }

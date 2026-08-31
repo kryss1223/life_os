@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
-from ..legacy_views import build_dashboard_context
+from ..page_contexts import build_dashboard_context
 
 
 @login_required

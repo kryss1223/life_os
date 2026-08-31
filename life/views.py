@@ -1,13 +1,9 @@
 """Fachada pública de vistas.
 
-Las URLs conservan sus imports históricos desde ``life.views``. Los dominios
-refactorizados se exponen aquí y el resto se mantiene temporalmente aislado en
-``legacy_views`` hasta completar su extracción.
+Las URLs conservan sus imports históricos desde ``life.views`` y cada dominio
+se implementa en un módulo independiente.
 """
 
-from .legacy_views import (
-    planning,
-)
 from .view_modules.allocations import (
     allocation_create,
     allocation_move,
@@ -17,6 +13,7 @@ from .view_modules.allocations import (
 from .view_modules.analytics import statistics, weekly_tracking
 from .view_modules.catalog import plan_detail, plan_list, task_detail, task_list
 from .view_modules.dashboard import dashboard
+from .view_modules.planning import planning
 from .view_modules.areas import (
     life_area_create,
     life_area_delete,
