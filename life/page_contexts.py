@@ -1,69 +1,29 @@
-from django.shortcuts import render,redirect,get_object_or_404
-
-from django.urls import reverse
-
-from django.contrib.auth.decorators import login_required
-
-from django.db.models import Avg, Sum
-
 from datetime import date, timedelta
 
-from django.db import transaction
-
-from .forms import(
-    LifeAreaForm,
-    PlanForm,
-    TaskForm,
-    TaskImpactFormSet,
-)
-
-from .models import (
-    LifeArea,
-    LifeAreaSnapshot,
-    Plan,
-    Task,
-    Week,
-    WeeklyTracking,
-    WeeklyTaskAllocation,
-)
-
-from decimal import Decimal, InvalidOperation
-
 from .forms import WeeklyPlannerForm
-
-from .services.weekly_planner import build_weekly_plan
-
-from .selectors.dashboard import dashboard_entities, current_week_with_allocations
-
+from .models import LifeArea, Task
 from .presenters.dashboard import (
     area_cards,
     dashboard_kpis,
     recent_activity_items,
-    upcoming_deadline_rows,
+    weekly_calendar_visuals,
     weekly_capacity,
     weekly_focus,
-    weekly_calendar_visuals,
 )
-
-from .presenters.planning import area_time_balance, planning_week, saved_week_calendar, year_calendar
-
+from .presenters.planning import (
+    area_time_balance,
+    planning_week,
+    saved_week_calendar,
+    year_calendar,
+)
+from .selectors.dashboard import dashboard_entities, current_week_with_allocations
 from .selectors.planning import (
     available_calendar_tasks,
-    eligible_planner_tasks,
+    saved_week_plan,
     tasks_for_year,
     upcoming_deadlines as select_upcoming_deadlines,
-    saved_week_plan,
 )
-
-from .services.allocations import save_optimized_schedule
-
 from .services.planning import process_planning_submission
-
-from django.contrib.auth import login
-
-from django.contrib.auth.forms import UserCreationForm
-
-from django.shortcuts import redirect, render
 
 def build_dashboard_context(request):
     today = date.today()
@@ -184,218 +144,6 @@ def build_dashboard_context(request):
     # CALENDARIO SEMANAL + DISTRIBUCIÓN
     # =========================================
 
-    day_names = [
-        "Lunes",
-        "Martes",
-        "Miércoles",
-        "Jueves",
-        "Viernes",
-        "Sábado",
-        "Domingo",
-    ]
-
-    allocations_by_date = {}
-
-    area_tone_by_id = {
-        area.pk: f"tone-{(index % 5) + 1}"
-        for index, area in enumerate(areas)
-    }
-
-    distribution_map = {}
-
-    def allocation_area_info(allocation):
-        impacts = list(
-            allocation.task.impacts.all()
-        )
-
-        primary_impact = max(
-            impacts,
-            key=lambda item: item.impact_percent,
-            default=None,
-        )
-
-        if primary_impact:
-            area = (
-                primary_impact
-                .plan
-                .life_area
-            )
-
-            return (
-                area.pk,
-                area.name,
-                area_tone_by_id.get(
-                    area.pk,
-                    "tone-neutral",
-                ),
-            )
-
-        task_plans = list(
-            allocation.task.plans.all()
-        )
-
-        if task_plans:
-            area = task_plans[0].life_area
-
-            return (
-                area.pk,
-                area.name,
-                area_tone_by_id.get(
-                    area.pk,
-                    "tone-neutral",
-                ),
-            )
-
-        return (
-            None,
-            "Sin área",
-            "tone-neutral",
-        )
-
-    for allocation in week_allocations:
-        (
-            area_id,
-            area_name,
-            tone,
-        ) = allocation_area_info(
-            allocation
-        )
-
-        allocation_row = {
-            "allocation": allocation,
-            "task": allocation.task,
-            "hours": (
-                allocation.planned_hours
-                or Decimal("0")
-            ),
-            "area_name": area_name,
-            "tone": tone,
-        }
-
-        allocations_by_date.setdefault(
-            allocation.planned_date,
-            [],
-        ).append(allocation_row)
-
-        distribution_key = (
-            area_id,
-            area_name,
-            tone,
-        )
-
-        distribution_map[
-            distribution_key
-        ] = (
-            distribution_map.get(
-                distribution_key,
-                Decimal("0"),
-            )
-            + allocation_row["hours"]
-        )
-
-    week_schedule = []
-
-    for index in range(7):
-        current_date = (
-            current_week_start
-            + timedelta(days=index)
-        )
-
-        day_allocations = (
-            allocations_by_date.get(
-                current_date,
-                [],
-            )
-        )
-
-        day_total = sum(
-            (
-                item["hours"]
-                for item in day_allocations
-            ),
-            Decimal("0"),
-        )
-
-        week_schedule.append({
-            "name": day_names[index],
-            "date": current_date,
-            "allocations": day_allocations[:3],
-            "extra_count": max(
-                0,
-                len(day_allocations) - 3,
-            ),
-            "total_hours": day_total,
-        })
-
-    # =========================================
-    # DISTRIBUCIÓN DEL TIEMPO
-    # =========================================
-
-    palette = {
-        "tone-1": "#58d7df",
-        "tone-2": "#8b5cf6",
-        "tone-3": "#f2b632",
-        "tone-4": "#34a853",
-        "tone-5": "#87909d",
-        "tone-neutral": "#5f6772",
-    }
-
-    time_distribution = []
-
-    for (
-        area_id,
-        area_name,
-        tone,
-    ), hours in sorted(
-        distribution_map.items(),
-        key=lambda item: item[1],
-        reverse=True,
-    ):
-        if weekly_assigned_hours > 0:
-            percent = (
-                hours
-                / weekly_assigned_hours
-                * Decimal("100")
-            )
-        else:
-            percent = Decimal("0")
-
-        time_distribution.append({
-            "area_id": area_id,
-            "name": area_name,
-            "tone": tone,
-            "hours": hours,
-            "percent": percent,
-        })
-
-    gradient_segments = []
-    gradient_start = Decimal("0")
-
-    for row in time_distribution:
-        gradient_end = (
-            gradient_start
-            + row["percent"]
-        )
-
-        gradient_segments.append(
-            (
-                f"{palette[row['tone']]} "
-                f"{float(gradient_start):.2f}% "
-                f"{float(gradient_end):.2f}%"
-            )
-        )
-
-        gradient_start = gradient_end
-
-    if gradient_segments:
-        time_distribution_gradient = (
-            ", ".join(gradient_segments)
-        )
-    else:
-        time_distribution_gradient = (
-            "#2a2a2f 0% 100%"
-        )
-
     weekly_visuals = weekly_calendar_visuals(
         allocations=week_allocations,
         areas=areas,
@@ -454,18 +202,6 @@ def build_dashboard_context(request):
     }
 
     return context
-
-import calendar
-
-from collections import defaultdict
-
-from datetime import date
-
-from django.contrib.auth.decorators import login_required
-
-from django.shortcuts import render
-
-from .models import LifeArea, Task
 
 def build_planning_context(request):
     year = int(
@@ -551,137 +287,6 @@ def build_planning_context(request):
 
     # =========================================
     # CALENDARIO FIJADO / RESUMEN SEMANAL
-    # =========================================
-
-    fixed_allocations = list(fixed_allocations)
-
-    allocations_by_date = defaultdict(list)
-
-    for allocation in fixed_allocations:
-        allocations_by_date[
-            allocation.planned_date
-        ].append(allocation)
-
-    # -------------------------
-    # MÉTRICAS DEL CALENDARIO
-    # -------------------------
-
-    saved_total_hours = sum(
-        (
-            allocation.planned_hours
-            or Decimal("0")
-            for allocation in fixed_allocations
-        ),
-        Decimal("0"),
-    )
-
-    saved_task_count = len({
-        allocation.task_id
-        for allocation in fixed_allocations
-    })
-
-    saved_days_with_work = len({
-        allocation.planned_date
-        for allocation in fixed_allocations
-        if allocation.planned_date
-    })
-
-    if (
-        current_week
-        and current_week.available_hours is not None
-    ):
-        saved_available_hours = Decimal(
-            str(current_week.available_hours)
-        )
-    else:
-        saved_available_hours = Decimal("0")
-
-    saved_free_hours = max(
-        Decimal("0"),
-        saved_available_hours - saved_total_hours,
-    )
-
-    if saved_available_hours > 0:
-        saved_load_percent = min(
-            Decimal("100"),
-            (
-                saved_total_hours
-                / saved_available_hours
-                * Decimal("100")
-            ),
-        )
-    else:
-        saved_load_percent = Decimal("0")
-
-    if saved_days_with_work > 0:
-        saved_daily_average = (
-            saved_total_hours
-            / Decimal(saved_days_with_work)
-        )
-    else:
-        saved_daily_average = Decimal("0")
-
-    calendar_is_fixed = bool(
-        current_week
-        and current_week.planning_mode
-        in {
-            Week.PlanningMode.OPTIMIZED,
-            Week.PlanningMode.MANUAL,
-        }
-    )
-
-    # -------------------------
-    # CALENDARIO POR DÍA
-    # -------------------------
-
-    saved_schedule = []
-
-    day_names = [
-        "Lunes",
-        "Martes",
-        "Miércoles",
-        "Jueves",
-        "Viernes",
-        "Sábado",
-        "Domingo",
-    ]
-
-    for index in range(7):
-        current_date = (
-            week_start
-            + timedelta(days=index)
-        )
-
-        day_allocations = (
-            allocations_by_date.get(
-                current_date,
-                [],
-            )
-        )
-
-        used_hours = sum(
-            (
-                allocation.planned_hours
-                or Decimal("0")
-                for allocation in day_allocations
-            ),
-            Decimal("0"),
-        )
-
-        saved_schedule.append({
-            "date": current_date,
-            "name": day_names[index],
-            "allocations": day_allocations,
-            "used_hours": used_hours,
-            "has_work": bool(day_allocations),
-            "is_weekend": index >= 5,
-        })
-
-    
-
-
-    # =========================================
-    # TAREAS DISPONIBLES PARA AÑADIR MANUALMENTE
     # =========================================
 
     saved = saved_week_calendar(
@@ -779,4 +384,6 @@ def build_planning_context(request):
     }
 
     return context
+
+
 
