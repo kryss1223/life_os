@@ -19,7 +19,7 @@ def _task_forms(*, user, data=None, task):
 
 @login_required
 def task_create(request):
-    task = Task()
+    task = Task(user=request.user)
     data = request.POST if request.method == "POST" else None
     form, formset = _task_forms(user=request.user, data=data, task=task)
     if request.method == "POST" and form.is_valid() and formset.is_valid():

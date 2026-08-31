@@ -248,9 +248,9 @@ class TaskForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         if user:
-            queryset = Task.objects.filter(
-                plans__life_area__user=user
-            ).distinct()
+            from .selectors.tasks import tasks_for_user
+
+            queryset = tasks_for_user(user)
             if self.instance and self.instance.pk:
                 queryset = queryset.exclude(pk=self.instance.pk)
             self.fields["parent"].queryset = queryset
