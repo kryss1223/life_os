@@ -119,6 +119,20 @@ class AutomaticPlanningTests(TestCase):
         response = self.client.get(reverse("life:planning"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context["saved_schedule"]), 7)
+        self.assertContains(response, "life/css/core/tokens.css")
+        self.assertContains(response, "life/css/core/base.css")
+        self.assertContains(response, "life/css/core/layout.css")
+        self.assertContains(response, "life/css/core/responsive.css")
+        self.assertContains(response, "life/css/components/buttons.css")
+        self.assertContains(response, "life/css/components/forms.css")
+        self.assertContains(response, "life/css/components/progress.css")
+        self.assertContains(response, "life/css/components/cards.css")
+        self.assertContains(response, "life/css/pages/areas.css")
+        self.assertContains(response, "life/css/pages/plans.css")
+        self.assertContains(response, "life/css/pages/tasks.css")
+        self.assertContains(response, "life/css/pages/dashboard.css")
+        self.assertNotContains(response, "life/css/style.css")
+        self.assertContains(response, "life/css/planning.css")
 
     def test_calculate_action_returns_proposal_without_saving_week(self):
         self.client.force_login(self.user)
@@ -145,4 +159,3 @@ class AutomaticPlanningTests(TestCase):
         week = Week.objects.get(user=self.user)
         self.assertEqual(week.planning_mode, Week.PlanningMode.OPTIMIZED)
         self.assertEqual(week.available_hours, 5)
-

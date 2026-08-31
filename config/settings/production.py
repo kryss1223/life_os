@@ -23,6 +23,13 @@ DATABASES = {
     )
 }
 
+STORAGES = {
+    **STORAGES,
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    },
+}
+
 render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 configured_hosts = [
     host.strip()
