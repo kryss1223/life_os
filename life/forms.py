@@ -245,6 +245,16 @@ class TaskForm(forms.ModelForm):
             ),
         }
 
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user:
+            queryset = Task.objects.filter(
+                plans__life_area__user=user
+            ).distinct()
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            self.fields["parent"].queryset = queryset
+
 
 class TaskImpactForm(forms.ModelForm):
     class Meta:
