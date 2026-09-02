@@ -89,9 +89,44 @@ class PlanAndTaskViewTests(TestCase):
         self.task.refresh_from_db()
         self.assertEqual(self.task.actual_hours, 2.5)
 
+    def test_task_detail_renders_subtasks_modal(self):
+        response = self.client.get(
+            reverse("life:task_detail", kwargs={"pk": self.task.pk})
+        )
+        self.assertContains(response, 'id="subtasks-modal"')
+        self.assertContains(response, "Subtareas y actividad")
+        self.assertContains(response, "data-open-subtasks")
+
+    def test_task_detail_can_create_and_toggle_subtask(self):
+        detail_url = reverse("life:task_detail", kwargs={"pk": self.task.pk})
+        response = self.client.post(
+            detail_url,
+            {
+                "action": "add_subtask",
+                "subtask_name": "Primer paso",
+                "estimated_hours": "1.5",
+            },
+        )
+        self.assertRedirects(response, detail_url, fetch_redirect_response=False)
+        subtask = self.task.subtasks.get(name="Primer paso")
+        self.assertEqual(subtask.user, self.user)
+        self.assertEqual(subtask.estimated_hours, 1.5)
+
+        self.client.post(
+            detail_url,
+            {"action": "toggle_subtask", "subtask_id": subtask.pk},
+        )
+        subtask.refresh_from_db()
+        self.assertEqual(subtask.status, Task.Status.COMPLETED)
+        self.assertIsNotNone(subtask.completed_at)
+
+    def test_task_list_searches_by_name(self):
+        response = self.client.get(reverse("life:task_list"), {"q": "propia"})
+        self.assertContains(response, self.task.name)
+        self.assertNotContains(response, self.other_task.name)
+
     def test_user_cannot_open_another_users_task_detail(self):
         response = self.client.get(
             reverse("life:task_detail", kwargs={"pk": self.other_task.pk})
         )
         self.assertEqual(response.status_code, 404)
-

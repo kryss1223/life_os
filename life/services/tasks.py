@@ -1,6 +1,6 @@
 from django.db import transaction
 
-from ..models import Plan
+from ..models import Plan, Task
 
 
 def add_actual_hours(task, raw_hours):
@@ -14,6 +14,32 @@ def add_actual_hours(task, raw_hours):
         task.actual_hours = Decimal(str(task.actual_hours or 0)) + hours
         task.save(update_fields=["actual_hours"])
     return task
+
+
+def create_subtask(*, parent, user, name, estimated_hours="0", due_date=None):
+    name = (name or "").strip()
+    if not name:
+        return None
+    subtask = Task(
+        user=user,
+        parent=parent,
+        name=name,
+        estimated_hours=estimated_hours or 0,
+        due_date=due_date or None,
+    )
+    subtask.full_clean()
+    subtask.save()
+    return subtask
+
+
+def toggle_subtask(subtask):
+    subtask.status = (
+        Task.Status.PENDING
+        if subtask.status == Task.Status.COMPLETED
+        else Task.Status.COMPLETED
+    )
+    subtask.save(update_fields=["status"])
+    return subtask
 
 
 @transaction.atomic

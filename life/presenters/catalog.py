@@ -1,6 +1,8 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.db.models import Q
+
 from ..models import Plan, Task
 from ..selectors.plans import plan_for_user, plans_for_user
 from ..selectors.tasks import task_for_user, tasks_for_user
@@ -97,7 +99,7 @@ def plan_detail_context(*, user, pk, today=None):
     }
 
 
-def task_list_context(*, user, current_filter="all", current_sort="recent", today=None):
+def task_list_context(*, user, current_filter="all", current_sort="recent", search_query="", today=None):
     today = today or date.today()
     base = tasks_for_user(user).prefetch_related("plans", "plans__life_area")
     counts = {
@@ -110,6 +112,9 @@ def task_list_context(*, user, current_filter="all", current_sort="recent", toda
         ).count(),
     }
     tasks = base
+    search_query = (search_query or "").strip()
+    if search_query:
+        tasks = tasks.filter(Q(name__icontains=search_query) | Q(description__icontains=search_query))
     if current_filter == "today":
         tasks = tasks.filter(due_date=today)
     elif current_filter == "week":
@@ -124,7 +129,7 @@ def task_list_context(*, user, current_filter="all", current_sort="recent", toda
             "progress_percent": round(float(_task_progress(task))),
             **_task_flags(task, today),
         })
-    return {"task_rows": rows, **counts, "current_filter": current_filter, "current_sort": current_sort}
+    return {"task_rows": rows, **counts, "current_filter": current_filter, "current_sort": current_sort, "search_query": search_query}
 
 
 def task_detail_context(*, user, pk, today=None):
