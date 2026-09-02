@@ -168,13 +168,12 @@ El antiguo `life/static/life/css/style.css` fue eliminado. Sus 6900 líneas se s
 
 ```text
 css/
+  theme.css
+  components.css
   core/
-    tokens.css
     base.css
     layout.css
-    responsive.css
   components/
-    buttons.css
     forms.css
     cards.css
     progress.css
@@ -188,11 +187,11 @@ css/
 
 Significado de cada capa:
 
-- `tokens.css`: colores, espacios, tipografía, radios y valores compartidos.
+- `theme.css`: tokens canónicos de color, espacio, tipografía, forma y elevación para light/dark.
+- `components.css`: mini UI kit y estados interactivos compartidos.
 - `base.css`: reset y estilos básicos del documento.
-- `layout.css`: aplicación, sidebar, contenido, cabeceras y secciones.
-- `responsive.css`: ajustes globales por ancho de pantalla.
-- `components/`: elementos reutilizables sin pertenecer a una página concreta.
+- `layout.css`: layout mobile-first, header, navegación inferior, sidebar de escritorio y menú de ajustes.
+- `components/`: reglas heredadas todavía necesarias durante la migración de pantallas.
 - `pages/`: estilos de un dominio o pantalla.
 - `planning.css`: dominio de planificación, que mantiene varias interfaces relacionadas.
 
