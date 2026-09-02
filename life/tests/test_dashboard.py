@@ -43,6 +43,10 @@ class DashboardViewTests(TestCase):
         self.assertEqual(response.context["active_tasks_count"], 1)
         self.assertEqual(response.context["life_balance"], 70)
         self.assertNotContains(response, "Plan oculto")
+        self.assertContains(response, 'class="dashboard-summary"')
+        self.assertContains(response, 'class="dashboard-focus ui-card"')
+        self.assertContains(response, 'class="dashboard-metrics"')
+        self.assertContains(response, 'class="dashboard-planning ui-card"')
 
     def test_empty_dashboard_loads_with_zero_metrics(self):
         empty_user = get_user_model().objects.create_user("empty", password="test-pass")
@@ -51,4 +55,3 @@ class DashboardViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["active_tasks_count"], 0)
         self.assertEqual(response.context["life_balance"], 0)
-

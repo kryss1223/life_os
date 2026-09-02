@@ -136,6 +136,8 @@ class AutomaticPlanningTests(TestCase):
         self.assertContains(response, "data-theme-toggle")
         self.assertContains(response, "data-settings-menu")
         self.assertContains(response, "life/css/planning.css")
+        self.assertContains(response, 'class="planning-config ui-card"')
+        self.assertContains(response, 'class="planning-day-choices"')
 
     def test_calculate_action_returns_proposal_without_saving_week(self):
         self.client.force_login(self.user)
@@ -146,6 +148,8 @@ class AutomaticPlanningTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.context["planner_result"])
         self.assertFalse(Week.objects.filter(user=self.user).exists())
+        self.assertContains(response, 'id="proposal-modal"')
+        self.assertContains(response, "Calendario semanal generado")
 
     def test_save_action_persists_optimized_week(self):
         self.client.force_login(self.user)
@@ -162,3 +166,9 @@ class AutomaticPlanningTests(TestCase):
         week = Week.objects.get(user=self.user)
         self.assertEqual(week.planning_mode, Week.PlanningMode.OPTIMIZED)
         self.assertEqual(week.available_hours, 5)
+        structured = self.client.get(response.url)
+        self.assertContains(structured, "planning-page is-structured")
+        self.assertContains(structured, 'class="planning-day-tabs"')
+        self.assertContains(structured, "data-open-planner")
+        self.assertContains(structured, 'id="planner-modal"')
+        self.assertContains(structured, "Planificador automático")

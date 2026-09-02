@@ -1,0 +1,30 @@
+{% if can_plan_week %}
+<form method="post" data-planning-config>
+    {% csrf_token %}
+    <input type="hidden" name="action" value="calculate">
+    <input type="hidden" name="week_offset" value="{{ week_offset }}">
+    <div class="planning-step">
+        <span class="planning-step__number">1</span>
+        <div><h2 id="planning-config-title">¿Cuántas horas tienes disponibles?</h2><p>Tiempo total que quieres dedicar esta semana.</p></div>
+    </div>
+    <output class="planning-hours-output" for="available-hours"><strong data-hours-value>{{ planner_form.available_hours.value|default:20 }}</strong> h</output>
+    <div class="planning-slider-row">{{ planner_form.available_hours }}<div><span>0 h</span><span>84 h</span></div></div>
+    <div class="planning-step planning-step--days">
+        <span class="planning-step__number">2</span>
+        <div><h2>¿Qué días incluyes en tu semana?</h2><p>Los días laborables siempre están disponibles.</p></div>
+    </div>
+    <div class="planning-day-choices" data-day-choices>
+        <span class="planning-day-choice is-selected"><b>Lun</b><i>✓</i></span>
+        <span class="planning-day-choice is-selected"><b>Mar</b><i>✓</i></span>
+        <span class="planning-day-choice is-selected"><b>Mié</b><i>✓</i></span>
+        <span class="planning-day-choice is-selected"><b>Jue</b><i>✓</i></span>
+        <span class="planning-day-choice is-selected"><b>Vie</b><i>✓</i></span>
+        <label class="planning-day-choice">{{ planner_form.exclude_saturday }}<span><b>Sáb</b><i>✓</i></span></label>
+        <label class="planning-day-choice">{{ planner_form.exclude_sunday }}<span><b>Dom</b><i>✓</i></span></label>
+    </div>
+    <button class="planning-primary-action ui-button" type="submit"><span aria-hidden="true">✦</span> Generar semana</button>
+    <div class="planning-config-note"><span aria-hidden="true">🌿</span><p>Crearemos un plan equilibrado según tus áreas, prioridades y fechas de entrega.</p></div>
+</form>
+{% else %}
+<div class="ui-empty-state"><h3>Esta semana ya ha terminado</h3><p>Puedes consultar su calendario, pero no regenerarlo.</p></div>
+{% endif %}

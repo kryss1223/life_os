@@ -1,0 +1,142 @@
+{% extends "life/base.html" %}
+{% load l10n %}
+
+{% block title %}Inicio | Life_OS{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <header class="dashboard-intro">
+        <h1>Hola, {% if request.user.first_name %}{{ request.user.first_name }}{% else %}{{ request.user.username }}{% endif %} <span aria-hidden="true">👋</span></h1>
+        <p>Vamos a por una semana increíble.</p>
+    </header>
+
+    <section class="dashboard-summary" aria-labelledby="weekly-summary-title">
+        <div class="dashboard-summary__header">
+            <span id="weekly-summary-title">Resumen semanal</span>
+            <strong>{{ current_week_start|date:"d" }}–{{ current_week_end|date:"d M" }}</strong>
+        </div>
+        <div class="dashboard-summary__body">
+            <div>
+                <strong class="dashboard-summary__value">{{ weekly_load_percent|floatformat:0 }}%</strong>
+                <span>{% if weekly_load_percent >= 80 %}¡Semana intensa!{% elif weekly_load_percent >= 50 %}¡Vas genial!{% else %}Tienes espacio para avanzar{% endif %}</span>
+            </div>
+            <div class="dashboard-summary__visual" aria-hidden="true">⛰️</div>
+        </div>
+        <div class="dashboard-summary__days" aria-label="Días de la semana">
+            {% for day in week_schedule %}
+            <div class="dashboard-summary__day {% if day.date == today %}is-today{% endif %}">
+                <span>{{ day.name|slice:":1" }}</span>
+                <strong>{{ day.date|date:"d" }}</strong>
+                {% if day.allocations %}<i aria-label="Con tareas"></i>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="dashboard-focus ui-card" aria-labelledby="weekly-focus-title">
+        <div class="dashboard-section-heading">
+            <div>
+                <span class="dashboard-section-icon" aria-hidden="true">◎</span>
+                <span id="weekly-focus-title">Foco de la semana</span>
+            </div>
+            {% if focus_plan %}<span class="ui-badge ui-badge--focus">En foco</span>{% endif %}
+        </div>
+
+        {% if focus_plan %}
+        <div class="dashboard-focus__content">
+            <div>
+                <a class="dashboard-focus__title" href="{% url 'life:plan_detail' focus_plan.pk %}">{{ focus_plan.name }}</a>
+                <span class="dashboard-label">Avance</span>
+                <div class="dashboard-progress-row">
+                    <div class="ui-progress"><div class="ui-progress__bar" style="--progress: {{ focus_plan.progress|unlocalize }}"></div></div>
+                    <strong>{{ focus_plan.progress|floatformat:0 }}%</strong>
+                </div>
+            </div>
+            <span class="dashboard-focus__illustration" aria-hidden="true">🎯</span>
+        </div>
+        {% else %}
+        <div class="ui-empty-state dashboard-empty">
+            <h3>Elige tu próximo objetivo</h3>
+            <p>Crea o activa un plan para convertirlo en tu foco semanal.</p>
+            <a class="ui-button" href="{% url 'life:plan_create' %}">Crear un plan</a>
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="dashboard-metrics" aria-label="Resumen de actividad">
+        <a class="dashboard-metric ui-card ui-card--interactive" href="{% url 'life:planning' %}">
+            <span>Horas esta semana</span>
+            <strong>{{ weekly_assigned_hours|floatformat:1 }}</strong>
+            <small>/ {{ weekly_available_hours|floatformat:1 }} h</small>
+            <i class="dashboard-metric__icon dashboard-metric__icon--info" aria-hidden="true">◷</i>
+        </a>
+        <a class="dashboard-metric ui-card ui-card--interactive" href="{% url 'life:task_list' %}">
+            <span>Tareas activas</span>
+            <strong>{{ active_tasks_count }}</strong>
+            <small>de {{ total_tasks_count }}</small>
+            <i class="dashboard-metric__icon dashboard-metric__icon--warning" aria-hidden="true">✓</i>
+        </a>
+        <a class="dashboard-metric ui-card ui-card--interactive" href="{% url 'life:plan_list' %}">
+            <span>Planes en curso</span>
+            <strong>{{ active_plans_count }}</strong>
+            <small>de {{ total_plans_count }}</small>
+            <i class="dashboard-metric__icon dashboard-metric__icon--success" aria-hidden="true">⚑</i>
+        </a>
+    </section>
+
+    <section class="dashboard-planning ui-card" aria-labelledby="planning-preview-title">
+        <div class="dashboard-section-heading">
+            <h2 id="planning-preview-title">Vista previa del planning</h2>
+            <a href="{% url 'life:planning' %}">Ver planning <span aria-hidden="true">›</span></a>
+        </div>
+        <div class="dashboard-planning__list">
+            {% for day in week_schedule %}
+            <article class="dashboard-day {% if day.date == today %}is-today{% endif %}">
+                <time datetime="{{ day.date|date:'Y-m-d' }}"><span>{{ day.name|slice:":3" }}</span><strong>{{ day.date|date:"d" }}</strong></time>
+                <div class="dashboard-day__content">
+                    <span>{{ day.allocations|length }} tarea{{ day.allocations|length|pluralize:"s" }}</span>
+                    <div class="dashboard-day__tags">
+                        {% for item in day.allocations|slice:":3" %}<span class="ui-badge">{{ item.area_name }}</span>{% empty %}<span class="dashboard-day__free">Día libre</span>{% endfor %}
+                        {% if day.extra_count %}<span class="ui-badge">+{{ day.extra_count }}</span>{% endif %}
+                    </div>
+                </div>
+                <strong>{{ day.total_hours|floatformat:1 }} h</strong>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <div class="dashboard-secondary-grid">
+        <section class="ui-card dashboard-deadlines" aria-labelledby="deadlines-title">
+            <div class="dashboard-section-heading">
+                <h2 id="deadlines-title">Próximas entregas</h2>
+                <a href="{% url 'life:task_list' %}">Ver todas</a>
+            </div>
+            <div class="dashboard-list">
+                {% for item in deadline_rows %}
+                <a class="dashboard-list-row" href="{% url 'life:task_detail' item.task.pk %}">
+                    <span class="dashboard-list-row__marker dashboard-list-row__marker--{{ item.tone }}" aria-hidden="true"></span>
+                    <div><strong>{{ item.task.name }}</strong><span>{% if item.plan %}{{ item.plan.name }}{% else %}Sin plan{% endif %}</span></div>
+                    <time>{{ item.task.due_date|date:"d M" }}</time>
+                </a>
+                {% empty %}<div class="ui-empty-state"><h3>Sin entregas próximas</h3><p>Nada urgente durante los próximos 30 días.</p></div>{% endfor %}
+            </div>
+        </section>
+
+        <section class="ui-card dashboard-areas" aria-labelledby="areas-title">
+            <div class="dashboard-section-heading">
+                <h2 id="areas-title">Balance de vida</h2>
+                <a href="{% url 'life:life_area_list' %}">Ver áreas</a>
+            </div>
+            <div class="dashboard-list">
+                {% for item in area_rows %}
+                <a class="dashboard-area-row" href="{% url 'life:life_area_detail' item.area.pk %}">
+                    <div><strong>{{ item.area.name }}</strong><span>{{ item.area.weekly_hours_target|floatformat:1 }} h deseadas</span></div>
+                    <div class="dashboard-progress-row"><div class="ui-progress"><div class="ui-progress__bar" style="--progress: {{ item.area.current_satisfaction }}"></div></div><strong>{{ item.area.current_satisfaction }}%</strong></div>
+                </a>
+                {% empty %}<div class="ui-empty-state"><h3>Crea tus áreas</h3><p>Te ayudarán a equilibrar tiempo y prioridades.</p></div>{% endfor %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
