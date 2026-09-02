@@ -37,6 +37,7 @@ def life_area_detail(request, pk):
     area = area_for_user(user=request.user, pk=pk)
     return render(request, "life/life_area_detail.html", {
         "area": area,
+        "all_areas": areas_for_user(request.user),
         "plans": area.plans.all(),
         "snapshots": area.snapshots.all().order_by("-week"),
     })

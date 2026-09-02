@@ -69,6 +69,16 @@ class PlanAndTaskViewTests(TestCase):
         self.assertIn(self.plan, listed)
         self.assertNotIn(self.other_plan, listed)
 
+    def test_plan_detail_renders_roadmap_tracking_modal(self):
+        response = self.client.get(
+            reverse("life:plan_detail", kwargs={"pk": self.plan.pk})
+        )
+        self.assertContains(response, 'id="roadmap-modal"')
+        self.assertContains(response, "data-open-roadmap")
+        self.assertContains(response, 'data-roadmap-tab="milestones"')
+        self.assertContains(response, 'data-roadmap-tab="weekly"')
+        self.assertContains(response, self.task.name)
+
     def test_task_list_exposes_hour_based_progress(self):
         response = self.client.get(reverse("life:task_list"))
         own_row = next(

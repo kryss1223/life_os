@@ -29,6 +29,19 @@ class LifeAreaViewTests(TestCase):
         response = self.client.get(reverse("life:life_area_list"))
         self.assertContains(response, "Salud")
         self.assertNotContains(response, "Privada")
+        self.assertContains(response, 'id="life-balance-modal"')
+        self.assertContains(response, "data-open-balance")
+
+    def test_detail_exposes_balance_modal_with_users_areas(self):
+        LifeArea.objects.create(user=self.user, name="Trabajo")
+        LifeArea.objects.create(user=self.other_user, name="Privada")
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("life:life_area_detail", kwargs={"pk": self.area.pk})
+        )
+        self.assertContains(response, "Balance de vida")
+        self.assertContains(response, "Trabajo")
+        self.assertNotContains(response, "Privada")
 
     def test_user_cannot_open_another_users_area(self):
         self.client.force_login(self.other_user)
@@ -52,4 +65,3 @@ class LifeAreaViewTests(TestCase):
         )
         self.assertRedirects(response, reverse("life:dashboard"), fetch_redirect_response=False)
         self.assertTrue(LifeArea.objects.filter(user=self.user, name="Familia").exists())
-
