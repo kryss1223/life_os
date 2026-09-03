@@ -1,12 +1,12 @@
 .progress {
-    height: 6px;
+    height: 5px;
     overflow: hidden;
-    background: var(--color-border);
-    border-radius: 10px;
+    background: color-mix(in srgb, var(--border) 55%, var(--surface-soft));
+    border-radius: var(--radius-pill);
 }
 
 .progress-bar {
     height: 100%;
-    background: var(--color-text-soft);
-    border-radius: 10px;
+    background: linear-gradient(90deg, var(--accent-hover), var(--accent));
+    border-radius: var(--radius-pill);
 }

@@ -63,7 +63,7 @@ label.planning-day-choice { min-height: 0; border: 0; }
 .planning-day-summary strong { font-size: var(--font-body); }
 .planning-day-summary__illustration { font-size: 3rem !important; }
 .planning-block-list { display: grid; gap: var(--space-2); }
-.planning-task-block { position: relative; display: grid; grid-template-columns: 4px minmax(0, 1fr) auto auto; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-sm); }
+.planning-task-block { position: relative; display: grid; grid-template-columns: 4px minmax(0, 1fr) auto auto; gap: var(--space-3); padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--border) 82%, var(--surface)); border-radius: var(--radius-md); background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 98%, white), var(--surface)); box-shadow: var(--shadow-card); }
 .planning-task-block__rail { border-radius: var(--radius-pill); background: var(--accent); }
 .planning-task-block__main { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .planning-task-block__main > a { overflow: hidden; font-weight: 700; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }

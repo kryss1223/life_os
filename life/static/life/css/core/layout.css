@@ -34,11 +34,12 @@
     backdrop-filter: blur(18px);
 }
 
-.app-nav-link { min-width: 0; min-height: 54px; display: flex; align-items: center; justify-content: center; gap: 3px; border-radius: var(--radius-sm); color: var(--text-muted); font-size: 10px; font-weight: 600; text-decoration: none; }
+.app-nav-link { min-width: 0; min-height: 54px; display: flex; align-items: center; justify-content: center; gap: 4px; border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 10px; font-weight: 600; text-decoration: none; }
 .bottom-navigation .app-nav-link { flex-direction: column; }
-.app-nav-link svg { width: 21px; height: 21px; stroke-width: 1.8; }
+.app-nav-link svg { width: 23px; height: 23px; stroke-width: 2.25; }
 .app-nav-link:hover { color: var(--text); }
-.app-nav-link.is-active { color: var(--accent); }
+.app-nav-link.is-active { color: var(--accent); font-weight: 800; }
+.bottom-navigation .app-nav-link.is-active svg { filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--accent) 30%, transparent)); }
 
 .settings-anchor { position: relative; }
 .settings-menu { width: min(280px, calc(100vw - 32px)); position: fixed; top: calc(var(--header-height) - 4px); right: var(--space-4); z-index: 60; padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-menu); }

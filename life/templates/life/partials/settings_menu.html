@@ -1,12 +1,12 @@
 <div class="settings-menu" id="{{ menu_id }}" data-settings-menu hidden>
-    <button class="settings-menu__item" type="button" aria-disabled="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Perfil</button>
-    <button class="settings-menu__item" type="button" aria-disabled="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Ajustes</button>
-    <button class="settings-menu__item" type="button" aria-disabled="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>Notificaciones</button>
-    <button class="settings-menu__item" type="button" aria-disabled="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.5 2.5 0 1 1 3.7 2.2c-.9.5-1.4 1-1.4 2M12 17h.01"/></svg>Ayuda y soporte</button>
+    <button class="settings-menu__item" type="button" aria-disabled="true">{% include "life/partials/icon.html" with name="user" %}Perfil</button>
+    <button class="settings-menu__item" type="button" aria-disabled="true">{% include "life/partials/icon.html" with name="settings" %}Ajustes</button>
+    <button class="settings-menu__item" type="button" aria-disabled="true">{% include "life/partials/icon.html" with name="bell" %}Notificaciones</button>
+    <button class="settings-menu__item" type="button" aria-disabled="true">{% include "life/partials/icon.html" with name="circle-help" %}Ayuda y soporte</button>
     <div class="settings-menu__divider"></div>
     <form method="post" action="{% url 'logout' %}">
         {% csrf_token %}
-        <button class="settings-menu__item settings-menu__item--danger" type="submit"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 17l5-5-5-5M15 12H3M15 3h5a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-5"/></svg>Cerrar sesión</button>
+        <button class="settings-menu__item settings-menu__item--danger" type="submit">{% include "life/partials/icon.html" with name="log-out" %}Cerrar sesión</button>
     </form>
     <span class="settings-menu__version">Life_OS v1.0</span>
 </div>

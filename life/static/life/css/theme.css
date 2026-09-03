@@ -1,3 +1,19 @@
+@font-face {
+    font-family: "Manrope";
+    src: url("../fonts/manrope-latin-variable.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 200 800;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Nunito";
+    src: url("../fonts/nunito-latin-variable.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 200 1000;
+    font-display: swap;
+}
+
 :root {
     color-scheme: light;
     --accent: #18b94b;
@@ -33,17 +49,28 @@
     --space-8: 48px;
     --space-10: 64px;
     --space-12: 80px;
-    --font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-sans: "Manrope", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-numeric: "Nunito", "Manrope", ui-sans-serif, sans-serif;
     --font-page-title: clamp(1.75rem, 5vw, 2rem);
-    --font-section-title: 1.25rem;
-    --font-card-title: 1rem;
+    --font-section-title: 1.1875rem;
+    --font-card-title: 0.9375rem;
     --font-body: 0.875rem;
     --font-secondary: 0.75rem;
     --font-caption: 0.6875rem;
+    --weight-regular: 450;
+    --weight-medium: 550;
+    --weight-semibold: 650;
+    --weight-bold: 750;
+    --tracking-tight: -0.035em;
+    --tracking-label: 0.015em;
     --touch-min: 44px;
     --shadow-sm: 0 1px 2px rgb(32 33 36 / 5%);
     --shadow-md: 0 10px 30px rgb(32 33 36 / 8%);
     --shadow-menu: 0 18px 44px rgb(32 33 36 / 16%);
+    --shadow-card: 0 1px 2px rgb(32 33 36 / 6%), 0 6px 18px rgb(32 33 36 / 7%), inset 0 1px 0 rgb(255 255 255 / 85%);
+    --shadow-card-hover: 0 2px 4px rgb(32 33 36 / 7%), 0 10px 24px rgb(32 33 36 / 10%), inset 0 1px 0 rgb(255 255 255 / 90%);
+    --shadow-button: 0 2px 3px rgb(12 132 51 / 18%), 0 6px 14px rgb(24 185 75 / 18%), inset 0 1px 0 rgb(255 255 255 / 28%);
+    --shadow-button-hover: 0 3px 5px rgb(12 132 51 / 20%), 0 9px 20px rgb(24 185 75 / 22%), inset 0 1px 0 rgb(255 255 255 / 34%);
     --focus-ring: 0 0 0 3px rgb(24 185 75 / 20%);
     --transition-fast: 160ms ease;
     --content-max: 1200px;
@@ -96,5 +123,9 @@
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 20%);
     --shadow-md: 0 12px 36px rgb(0 0 0 / 28%);
     --shadow-menu: 0 18px 44px rgb(0 0 0 / 45%);
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 24%), 0 8px 22px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(255 255 255 / 5%);
+    --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 28%), 0 12px 28px rgb(0 0 0 / 32%), inset 0 1px 0 rgb(255 255 255 / 7%);
+    --shadow-button: 0 2px 3px rgb(0 0 0 / 24%), 0 7px 16px rgb(88 215 223 / 15%), inset 0 1px 0 rgb(255 255 255 / 18%);
+    --shadow-button-hover: 0 3px 5px rgb(0 0 0 / 28%), 0 10px 22px rgb(88 215 223 / 20%), inset 0 1px 0 rgb(255 255 255 / 22%);
     --focus-ring: 0 0 0 3px rgb(88 215 223 / 22%);
 }

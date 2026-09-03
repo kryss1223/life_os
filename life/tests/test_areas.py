@@ -50,6 +50,18 @@ class LifeAreaViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 404)
 
+    def test_detail_does_not_repeat_satisfaction_inside_metrics(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("life:life_area_detail", kwargs={"pk": self.area.pk})
+        )
+        metrics = response.content.decode().split('class="area-detail-metrics ui-card"', 1)[1].split("</section>", 1)[0]
+        self.assertIn("Importancia", metrics)
+        self.assertIn("Horas objetivo / semana", metrics)
+        self.assertNotIn("Satisfacción actual", metrics)
+        self.assertNotIn("Satisfacción deseada", metrics)
+        self.assertNotIn(">Gap<", metrics)
+
     def test_create_assigns_area_to_current_user(self):
         self.client.force_login(self.user)
         response = self.client.post(
