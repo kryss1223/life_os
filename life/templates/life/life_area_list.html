@@ -11,7 +11,7 @@
     <div class="areas-card-list">
         {% for area in areas %}
         <a class="area-list-card ui-card" href="{% url 'life:life_area_detail' area.pk %}">
-            <span class="area-icon">{% include "life/partials/icon.html" with name="heart" size="lg" %}</span>
+            <span class="area-icon area-tone--{{ area.color_key }}">{% include "life/partials/icon.html" with name=area.icon_key size="lg" %}</span>
             <div>
                 <h2>{{ area.name }}</h2>
                 <span class="importance-row">Importancia {% importance_stars area.importance_weight %}</span>

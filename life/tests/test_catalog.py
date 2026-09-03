@@ -42,6 +42,23 @@ class PlanAndTaskViewTests(TestCase):
         queryset = response.context["form"].fields["life_area"].queryset
         self.assertQuerySetEqual(queryset, [self.area])
 
+    def test_plan_create_can_preselect_an_owned_area(self):
+        response = self.client.get(
+            reverse("life:plan_create"),
+            {"area": self.area.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["form"].initial["life_area"], self.area)
+
+    def test_plan_create_cannot_preselect_another_users_area(self):
+        response = self.client.get(
+            reverse("life:plan_create"),
+            {"area": self.other_area.pk},
+        )
+
+        self.assertEqual(response.status_code, 404)
+
     def test_user_cannot_edit_another_users_plan(self):
         response = self.client.get(
             reverse("life:plan_edit", kwargs={"pk": self.other_plan.pk})

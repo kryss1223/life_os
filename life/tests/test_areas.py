@@ -77,3 +77,24 @@ class LifeAreaViewTests(TestCase):
         )
         self.assertRedirects(response, reverse("life:dashboard"), fetch_redirect_response=False)
         self.assertTrue(LifeArea.objects.filter(user=self.user, name="Familia").exists())
+
+    def test_area_identity_can_be_saved(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("life:life_area_edit", kwargs={"pk": self.area.pk}),
+            {
+                "name": self.area.name,
+                "description": "",
+                "icon_key": "briefcase",
+                "color_key": "blue",
+                "importance_weight": 50,
+                "current_satisfaction": 50,
+                "desired_satisfaction": 80,
+                "weekly_hours_target": 5,
+            },
+        )
+
+        self.assertRedirects(response, reverse("life:life_area_detail", kwargs={"pk": self.area.pk}), fetch_redirect_response=False)
+        self.area.refresh_from_db()
+        self.assertEqual(self.area.icon_key, "briefcase")
+        self.assertEqual(self.area.color_key, "blue")

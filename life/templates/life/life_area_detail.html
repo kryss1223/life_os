@@ -1,19 +1,26 @@
 {% extends "life/base.html" %}
 {% load static l10n life_ui %}
 {% block title %}{{ area.name }} | Life_OS{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'life/css/pages/areas.css' %}?v=8">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'life/css/pages/areas.css' %}?v=16">{% endblock %}
 {% block content %}
-<div class="area-detail-page">
-    <header class="area-detail-topbar">
-        <a class="icon-button" href="{% url 'life:life_area_list' %}" aria-label="Volver">{% include "life/partials/icon.html" with name="chevron-left" %}</a>
-        <span>Detalle del área</span>
-        <a class="icon-button" href="{% url 'life:life_area_edit' area.pk %}" aria-label="Editar">{% include "life/partials/icon.html" with name="pencil" %}</a>
+<div class="area-detail-page area-tone--{{ area.color_key|default:'green' }}">
+    <header class="area-detail-header">
+        <nav class="area-detail-topbar" aria-label="Acciones del área">
+            <a class="icon-button" href="{% url 'life:life_area_list' %}" aria-label="Volver">{% include "life/partials/icon.html" with name="chevron-left" %}</a>
+            <span>Área de vida</span>
+            <a class="icon-button" href="{% url 'life:life_area_edit' area.pk %}" aria-label="Editar">{% include "life/partials/icon.html" with name="pencil" %}</a>
+        </nav>
+        <section class="area-detail-hero">
+            <span class="area-icon area-tone--{{ area.color_key }}">{% include "life/partials/icon.html" with name=area.icon_key size="lg" %}</span>
+            <div class="area-detail-hero__content">
+                <span class="area-detail-hero__eyebrow">Tu espacio de equilibrio</span>
+                <h1>{{ area.name }}</h1>
+                <p>{% if area.description %}{{ area.description }}{% else %}Una parte importante de tu vida.{% endif %}</p>
+                <span class="area-detail-hero__importance"><small>Importancia</small>{% importance_stars area.importance_weight %}</span>
+            </div>
+            <span class="area-detail-hero__art" aria-hidden="true">✦</span>
+        </section>
     </header>
-
-    <section class="area-detail-hero">
-        <span class="area-icon">{% include "life/partials/icon.html" with name="heart" size="lg" %}</span>
-        <div><h1>{{ area.name }}</h1><p>{% if area.description %}{{ area.description }}{% else %}Una parte importante de tu vida.{% endif %}</p></div>
-    </section>
 
     <section class="area-satisfaction-summary ui-card">
         <h2>Resumen de satisfacción</h2>
@@ -30,16 +37,38 @@
         <div><span class="area-metric-label">{% include "life/partials/icon.html" with name="clock" size="sm" %} Horas objetivo / semana</span><strong>{{ area.weekly_hours_target|floatformat:1 }} h</strong></div>
     </section>
 
-    <section class="area-plans">
-        <div class="area-section-heading"><h2>Planes vinculados</h2><a href="{% url 'life:plan_create' %}">{% include "life/partials/icon.html" with name="plus" size="sm" %} Nuevo plan</a></div>
-        <div>
-            {% for plan in plans %}
-            <a class="area-plan-row ui-card" href="{% url 'life:plan_detail' plan.pk %}"><span><strong>{{ plan.name }}</strong><small>{{ plan.get_status_display }}</small></span><div class="ui-progress-bar"><span style="width:{{ plan.progress|unlocalize }}%"></span></div><b>{{ plan.progress|floatformat:0 }}%</b></a>
-            {% empty %}<div class="ui-empty-state ui-card"><p>Todavía no hay planes vinculados.</p></div>{% endfor %}
+    <section class="area-plans ui-card">
+        <div class="area-section-heading">
+            <h2>Planes vinculados</h2>
+            <a href="{% url 'life:plan_create' %}?area={{ area.pk }}">{% include "life/partials/icon.html" with name="plus" size="sm" %} Nuevo plan</a>
         </div>
+        <div class="area-plans-intro">
+            <span class="area-plans-intro__icon">{% include "life/partials/icon.html" with name="target" %}</span>
+            <span><strong>{{ plans|length }} plan{{ plans|length|pluralize:"es" }} vinculado{{ plans|length|pluralize }}</strong><small>Conecta tus planes y avanza con propósito.</small></span>
+            <span class="area-plans-intro__art" aria-hidden="true">☀</span>
+        </div>
+        <div class="area-plan-list">
+            {% for plan in plans %}
+            <a class="area-plan-row" href="{% url 'life:plan_detail' plan.pk %}">
+                <span class="area-plan-row__icon">{% include "life/partials/icon.html" with name="flag" %}</span>
+                <span class="area-plan-row__content">
+                    <strong>{{ plan.name }}</strong>
+                    <span class="area-plan-row__badges">{% include "life/partials/area_identity.html" with area=area show_name=True compact=True %}<small class="ui-badge {% if plan.status == 'ACTIVE' %}ui-badge--active{% elif plan.status == 'COMPLETED' %}ui-badge--completed{% else %}ui-badge--pending{% endif %}">{{ plan.get_status_display }}</small></span>
+                </span>
+                <span class="area-plan-row__progress"><span class="ui-progress-bar"><i style="width:{{ plan.progress|unlocalize }}%"></i></span><b>{{ plan.progress|floatformat:0 }}%</b></span>
+                <span class="area-card-chevron">{% include "life/partials/icon.html" with name="chevron-right" %}</span>
+            </a>
+            {% endfor %}
+        </div>
+        <a class="area-create-plan" href="{% url 'life:plan_create' %}?area={{ area.pk }}"><span>{% include "life/partials/icon.html" with name="plus" size="sm" %} Crear un plan</span><small>Define objetivos, organiza acciones y mide tu progreso.</small></a>
     </section>
 
-    <button class="area-open-balance ui-card" type="button" data-open-balance><span><strong>Balance de vida</strong><small>Compara todas tus áreas</small></span><b>{% include "life/partials/icon.html" with name="chevron-right" %}</b></button>
+    <button class="area-open-balance ui-card" type="button" data-open-balance>
+        <span class="area-open-balance__icon">{% include "life/partials/icon.html" with name="heart" size="lg" %}</span>
+        <span class="area-open-balance__content"><small>Tu perspectiva general</small><strong>Balance de vida</strong><span>Descubre cómo conviven todas tus áreas</span></span>
+        <span class="area-open-balance__art" aria-hidden="true">✦</span>
+        <b>{% include "life/partials/icon.html" with name="chevron-right" %}</b>
+    </button>
     <div class="area-detail-actions"><a class="ui-button ui-button--secondary" href="{% url 'life:life_area_edit' area.pk %}">{% include "life/partials/icon.html" with name="pencil" size="sm" %} Editar área</a><a class="ui-button ui-button--danger" href="{% url 'life:life_area_delete' area.pk %}">{% include "life/partials/icon.html" with name="trash-2" size="sm" %} Eliminar</a></div>
 </div>
 {% include "life/partials/life_balance_modal.html" with balance_areas=all_areas %}

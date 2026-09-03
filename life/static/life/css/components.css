@@ -148,6 +148,11 @@ button.ui-card:active { box-shadow: var(--shadow-sm); transform: translateY(0); 
     fill: currentColor;
     stroke-width: 1.5;
 }
+.area-tone--green{--area-color:var(--area-green)}.area-tone--blue{--area-color:var(--area-blue)}.area-tone--purple{--area-color:var(--area-purple)}.area-tone--orange{--area-color:var(--area-orange)}.area-tone--pink{--area-color:var(--area-pink)}
+.area-identity{display:inline-flex;align-items:center;gap:6px;color:var(--area-color)}
+.area-identity__icon{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:color-mix(in srgb,var(--area-color) 13%,var(--surface));color:var(--area-color)}
+.area-identity__name{padding:3px 8px;border-radius:var(--radius-pill);background:color-mix(in srgb,var(--area-color) 12%,var(--surface));color:var(--area-color);font-size:10px;font-weight:800}
+.area-identity--compact .area-identity__icon{width:24px;height:24px;border-radius:7px}
 
 .progress,
 .ui-progress,

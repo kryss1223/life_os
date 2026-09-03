@@ -1,0 +1,4 @@
+<span class="area-identity area-tone--{{ area.color_key|default:'green' }}{% if compact %} area-identity--compact{% endif %}">
+    <span class="area-identity__icon">{% include "life/partials/icon.html" with name=area.icon_key|default:"heart" size="sm" %}</span>
+    {% if show_name %}<span class="area-identity__name">{{ area.name }}</span>{% endif %}
+</span>

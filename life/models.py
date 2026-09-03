@@ -8,6 +8,21 @@ from django.db.models import Sum
 
 
 class LifeArea(models.Model):
+    class Icon(models.TextChoices):
+        HEART = "heart", "Corazón"
+        TARGET = "target", "Objetivo"
+        BRIEFCASE = "briefcase", "Trabajo"
+        BOOK = "book-open", "Estudios"
+        MUSIC = "music", "Música"
+        STAR = "star", "Estrella"
+
+    class Color(models.TextChoices):
+        GREEN = "green", "Verde"
+        BLUE = "blue", "Azul"
+        PURPLE = "purple", "Morado"
+        ORANGE = "orange", "Naranja"
+        PINK = "pink", "Rosa"
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -16,6 +31,8 @@ class LifeArea(models.Model):
 
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
+    icon_key = models.CharField(max_length=24, choices=Icon.choices, default=Icon.HEART)
+    color_key = models.CharField(max_length=16, choices=Color.choices, default=Color.GREEN)
 
     importance_weight = models.PositiveSmallIntegerField(
     default=50,
