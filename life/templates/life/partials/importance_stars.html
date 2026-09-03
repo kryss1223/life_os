@@ -1,0 +1,5 @@
+<span class="importance-stars" role="img" aria-label="Importancia: {{ level }} de 4 estrellas" title="Importancia: {{ level }} de 4">
+    {% for filled in stars %}
+    <span class="importance-star{% if filled %} is-filled{% endif %}">{% include "life/partials/icon.html" with name="star" size="sm" %}</span>
+    {% endfor %}
+</span>

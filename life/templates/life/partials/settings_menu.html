@@ -1,0 +1,12 @@
+<div class="settings-menu" id="{{ menu_id }}" data-settings-menu hidden>
+    <button class="settings-menu__item" type="button" aria-disabled="true">{% include "life/partials/icon.html" with name="user" %}Perfil</button>
+    <button class="settings-menu__item" type="button" aria-disabled="true">{% include "life/partials/icon.html" with name="settings" %}Ajustes</button>
+    <button class="settings-menu__item" type="button" aria-disabled="true">{% include "life/partials/icon.html" with name="bell" %}Notificaciones</button>
+    <button class="settings-menu__item" type="button" aria-disabled="true">{% include "life/partials/icon.html" with name="circle-help" %}Ayuda y soporte</button>
+    <div class="settings-menu__divider"></div>
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button class="settings-menu__item settings-menu__item--danger" type="submit">{% include "life/partials/icon.html" with name="log-out" %}Cerrar sesión</button>
+    </form>
+    <span class="settings-menu__version">Life_OS v1.0</span>
+</div>

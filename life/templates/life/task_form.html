@@ -1,163 +1,19 @@
 {% extends "life/base.html" %}
-
-{% block title %}Nueva tarea | Life OS{% endblock %}
-
+{% load static %}
+{% block title %}{% if editing %}Editar tarea{% else %}Nueva tarea{% endif %} | Life_OS{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'life/css/pages/tasks.css' %}?v=4">{% endblock %}
 {% block content %}
-
-<header class="page-header">
-
-    {% if editing %}
-
-    <span class="eyebrow">
-        EDIT TASK
-    </span>
-
-    <h1>
-        Editar {{ task.name }}
-    </h1>
-
-    <p>
-        Modifica la tarea y su impacto
-        sobre tus planes.
-    </p>
-
-{% else %}
-
-    <span class="eyebrow">
-        NEW TASK
-    </span>
-
-    <h1>
-        Crear tarea
-    </h1>
-
-    <p>
-        Define una acción y cómo contribuye
-        a tus planes.
-    </p>
-
-{% endif %}
-</header>
-
-
-<form method="POST">
-
-    {% csrf_token %}
-
-
-    <div class="form-container">
-
-        <h2 class="form-section-title">
-            Tarea
-        </h2>
-
-        {% for field in form %}
-
-            <div class="form-group">
-
-                <label>
-                    {{ field.label }}
-                </label>
-
-                {{ field }}
-
-                {% for error in field.errors %}
-                    <span class="form-error">
-                        {{ error }}
-                    </span>
-                {% endfor %}
-
-            </div>
-
-        {% endfor %}
-
-    </div>
-
-
-    <div class="form-container impact-container">
-
-        <h2 class="form-section-title">
-            Impactos
-        </h2>
-
-        <p class="form-description">
-            Indica cuánto progreso produce esta tarea
-            sobre cada plan.
-        </p>
-
-
-        {{ formset.management_form }}
-
-
-        {% for impact in formset %}
-
-            <div class="impact-row">
-
-                {% for hidden in impact.hidden_fields %}
-                    {{ hidden }}
-                {% endfor %}
-
-
-                <div class="impact-field">
-
-                    <label>
-                        Plan
-                    </label>
-
-                    {{ impact.plan }}
-
-                </div>
-
-
-                <div class="impact-field impact-percent">
-
-                    <label>
-                        Impacto
-                    </label>
-
-                    {{ impact.impact_percent }}
-
-                </div>
-
-
-                {% if impact.DELETE %}
-
-                    <div class="impact-delete">
-                        {{ impact.DELETE }}
-                        <span>Eliminar</span>
-                    </div>
-
-                {% endif %}
-
-            </div>
-
-        {% endfor %}
-
-    </div>
-
-
-    <div class="form-actions task-form-actions">
-
-        <a
-            href="{% url 'life:task_list' %}"
-            class="button button-secondary"
-        >
-            Cancelar
-        </a>
-
-        <button
-            type="submit"
-            class="button"
-        >
-            {% if editing %}
-                Guardar cambios
-            {% else %}
-                Crear tarea
-            {% endif %}
-        </button>
-
-    </div>
-
-</form>
-
+<div class="task-form-page">
+    <header class="task-form-topbar"><a class="icon-button" href="{% if editing %}{% url 'life:task_detail' task.pk %}{% else %}{% url 'life:task_list' %}{% endif %}" aria-label="Cancelar">×</a><h1>{% if editing %}Editar tarea{% else %}Nueva tarea{% endif %}</h1><button type="submit" form="task-editor" class="task-form-save-icon" aria-label="Guardar">✓</button></header>
+    <form method="post" id="task-editor" class="task-editor">{% csrf_token %}
+        {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
+        <label class="task-form-field"><span>Título de la tarea</span>{{ form.name }}{% for error in form.name.errors %}<small class="form-error">{{ error }}</small>{% endfor %}</label>
+        <label class="task-form-field"><span>Descripción <small>(opcional)</small></span>{{ form.description }}{% for error in form.description.errors %}<small class="form-error">{{ error }}</small>{% endfor %}</label>
+        <div class="task-form-grid"><label class="task-form-field"><span>Estado</span>{{ form.status }}</label><label class="task-form-field"><span>Fecha límite</span>{{ form.due_date }}</label></div>
+        <div class="task-form-grid"><label class="task-form-field"><span>Tiempo estimado</span>{{ form.estimated_hours }}</label><label class="task-form-field"><span>Tiempo registrado</span>{{ form.actual_hours }}</label></div>
+        <label class="task-form-field"><span>Tarea principal <small>(opcional)</small></span>{{ form.parent }}{% for error in form.parent.errors %}<small class="form-error">{{ error }}</small>{% endfor %}</label>
+        <section class="task-impact-editor ui-card"><div><h2>Planes relacionados</h2><p>Define cómo contribuye esta tarea a tus planes. El impacto puede ser positivo o negativo.</p></div>{{ formset.management_form }}{% for impact in formset %}<div class="task-impact-row">{% for hidden in impact.hidden_fields %}{{ hidden }}{% endfor %}<label><span>Plan</span>{{ impact.plan }}</label><label><span>Impacto %</span>{{ impact.impact_percent }}</label>{% if impact.DELETE %}<label class="task-impact-delete">{{ impact.DELETE }}<span>Eliminar</span></label>{% endif %}{% for error in impact.non_field_errors %}<small class="form-error">{{ error }}</small>{% endfor %}</div>{% endfor %}</section>
+        <button class="ui-button task-form-submit" type="submit">{% if editing %}Guardar cambios{% else %}Crear tarea{% endif %}</button>
+    </form>
+</div>
 {% endblock %}

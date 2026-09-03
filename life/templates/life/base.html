@@ -1,74 +1,120 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% load static %}
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#F7F8F5">
+    <script>
+        (() => {
+            const savedTheme = localStorage.getItem("life-os-theme");
+            if (savedTheme === "dark") document.documentElement.dataset.theme = "dark";
+        })();
+    </script>
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+    <title>{% block title %}Life_OS{% endblock %}</title>
 
-    <link
-        rel="icon"
-        type="image/png"
-        href="{% static 'img/favicon.png' %}"
-    >
-    <title>{% block title %}Life OS{% endblock %}</title>
-
-    <!-- CSS GENERAL -->
-    <link rel="stylesheet" href="{% static 'life/css/style.css' %}?v=2">
-
-    <!-- CSS ESPECÍFICO DE CADA PÁGINA -->
-    {% block extra_css %}
-    {% endblock %}
+    <link rel="stylesheet" href="{% static 'life/css/theme.css' %}?v=7">
+    <link rel="stylesheet" href="{% static 'life/css/core/base.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'life/css/components/forms.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'life/css/components/progress.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'life/css/components/cards.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'life/css/components.css' %}?v=11">
+    <link rel="stylesheet" href="{% static 'life/css/core/layout.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'life/css/pages/areas.css' %}?v=22">
+    <link rel="stylesheet" href="{% static 'life/css/pages/plans.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'life/css/pages/tasks.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'life/css/pages/dashboard.css' %}?v=17">
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
+{% with current_url=request.resolver_match.url_name %}
+<div class="app-shell {% if not request.user.is_authenticated %}app-shell--guest{% endif %}">
+    {% if request.user.is_authenticated %}
+    <header class="app-header">
+        <a class="app-brand" href="{% url 'life:dashboard' %}">Life_OS</a>
+        <div class="app-header__actions">
+            <button class="icon-button" type="button" data-theme-toggle aria-label="Cambiar tema">
+                {% include "life/partials/icon.html" with name="sun" %}
+            </button>
+            <div class="settings-anchor">
+                <button class="icon-button" type="button" data-settings-toggle aria-expanded="false" aria-controls="mobile-settings-menu" aria-label="Abrir ajustes">
+                    {% include "life/partials/icon.html" with name="settings" %}
+                </button>
+                {% include "life/partials/settings_menu.html" with menu_id="mobile-settings-menu" %}
+            </div>
+        </div>
+    </header>
 
-<div class="app">
-
-    <aside class="sidebar">
-        <div>
-            <h2 class="logo">LIFE_OS</h2>
-
-            <nav>
-
-                <a href="{% url 'life:dashboard' %}">
-                    Dashboard
-                </a>
-
-                <a href="{% url 'life:life_area_list' %}">
-                    Áreas
-                </a>
-                
-
-                <a href="{% url 'life:plan_list' %}">
-                    Planes
-                </a>
-
-                <a href="{% url 'life:task_list' %}">
-                    Tareas
-                </a>
-
-                <a href="{% url 'life:planning' %}">
-                    Planning
-                </a>
+    <aside class="desktop-sidebar">
+        <div class="desktop-sidebar__top">
+            <a class="app-brand" href="{% url 'life:dashboard' %}">Life_OS</a>
+            <nav class="desktop-navigation" aria-label="Navegación principal">
+                {% include "life/partials/app_nav_links.html" %}
             </nav>
         </div>
-
-        <div class="sidebar-bottom">
-            {{ request.user.username }}
+        <div class="desktop-sidebar__bottom">
+            <span class="desktop-sidebar__user">{{ request.user.username }}</span>
+            <button class="icon-button" type="button" data-theme-toggle aria-label="Cambiar tema">
+                {% include "life/partials/icon.html" with name="sun" %}
+            </button>
+            <div class="settings-anchor">
+                <button class="icon-button" type="button" data-settings-toggle aria-expanded="false" aria-controls="desktop-settings-menu" aria-label="Abrir ajustes">
+                    {% include "life/partials/icon.html" with name="settings" %}
+                </button>
+                {% include "life/partials/settings_menu.html" with menu_id="desktop-settings-menu" %}
+            </div>
         </div>
     </aside>
+    {% endif %}
 
-
-    <main class="content">
-
-        {% block content %}
-        {% endblock %}
-
+    <main class="app-main">
+        <div class="content">{% block content %}{% endblock %}</div>
     </main>
 
+    {% if request.user.is_authenticated %}
+    <nav class="bottom-navigation" aria-label="Navegación principal">
+        {% include "life/partials/app_nav_links.html" %}
+    </nav>
+    {% endif %}
 </div>
+{% endwith %}
 
+<script>
+    (() => {
+        const root = document.documentElement;
+        const closeMenus = () => {
+            document.querySelectorAll("[data-settings-menu]").forEach(menu => menu.hidden = true);
+            document.querySelectorAll("[data-settings-toggle]").forEach(button => button.setAttribute("aria-expanded", "false"));
+        };
+
+        document.querySelectorAll("[data-theme-toggle]").forEach(button => {
+            button.addEventListener("click", () => {
+                const next = root.dataset.theme === "dark" ? "light" : "dark";
+                if (next === "dark") root.dataset.theme = "dark";
+                else delete root.dataset.theme;
+                localStorage.setItem("life-os-theme", next);
+            });
+        });
+
+        document.querySelectorAll("[data-settings-toggle]").forEach(button => {
+            button.addEventListener("click", event => {
+                event.stopPropagation();
+                const menu = document.getElementById(button.getAttribute("aria-controls"));
+                const willOpen = menu.hidden;
+                closeMenus();
+                menu.hidden = !willOpen;
+                button.setAttribute("aria-expanded", String(willOpen));
+            });
+        });
+
+        document.addEventListener("click", event => {
+            if (!event.target.closest(".settings-anchor")) closeMenus();
+        });
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape") closeMenus();
+        });
+    })();
+</script>
 </body>
 </html>

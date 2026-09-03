@@ -1,11 +1,28 @@
 from django.conf import settings
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 from decimal import Decimal
 from django.db.models import Sum
 
 
 class LifeArea(models.Model):
+    class Icon(models.TextChoices):
+        HEART = "heart", "Corazón"
+        TARGET = "target", "Objetivo"
+        BRIEFCASE = "briefcase", "Trabajo"
+        BOOK = "book-open", "Estudios"
+        MUSIC = "music", "Música"
+        STAR = "star", "Estrella"
+
+    class Color(models.TextChoices):
+        GREEN = "green", "Verde"
+        BLUE = "blue", "Azul"
+        PURPLE = "purple", "Morado"
+        ORANGE = "orange", "Naranja"
+        PINK = "pink", "Rosa"
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -14,6 +31,8 @@ class LifeArea(models.Model):
 
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
+    icon_key = models.CharField(max_length=24, choices=Icon.choices, default=Icon.HEART)
+    color_key = models.CharField(max_length=16, choices=Color.choices, default=Color.GREEN)
 
     importance_weight = models.PositiveSmallIntegerField(
     default=50,
@@ -149,6 +168,16 @@ class Task(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
 
+    # Nullable durante la migración progresiva de los datos desplegados.
+    # Se convertirá en obligatorio cuando la auditoría de producción esté limpia.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="tasks",
+        null=True,
+        blank=True,
+    )
+
     parent = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,
@@ -186,7 +215,33 @@ class Task(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def clean(self):
+        super().clean()
+        if not self.parent_id:
+            return
+        if self.pk and self.parent_id == self.pk:
+            raise ValidationError({"parent": "Una tarea no puede ser su propia tarea principal."})
+        if self.user_id and self.parent.user_id and self.parent.user_id != self.user_id:
+            raise ValidationError({"parent": "La tarea principal pertenece a otro usuario."})
+
+        visited = set()
+        current = self.parent
+        while current is not None:
+            if current.pk in visited or (self.pk and current.pk == self.pk):
+                raise ValidationError({"parent": "La jerarquía de tareas no puede contener ciclos."})
+            visited.add(current.pk)
+            current = current.parent
+
     def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        status_is_being_saved = update_fields is None or "status" in update_fields
+        if status_is_being_saved:
+            if self.status == self.Status.COMPLETED and self.completed_at is None:
+                self.completed_at = timezone.now()
+            elif self.status != self.Status.COMPLETED:
+                self.completed_at = None
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {"completed_at"}
         super().save(*args, **kwargs)
     
         for impact in self.impacts.select_related("plan"):
@@ -217,6 +272,20 @@ class TaskImpact(models.Model):
         default=0,
         validators=[MinValueValidator(-100), MaxValueValidator(100)],
     )
+
+    def clean(self):
+        super().clean()
+        if self.task_id and self.plan_id:
+            if self.task.user_id and self.task.user_id != self.plan.life_area.user_id:
+                raise ValidationError({"plan": "El plan pertenece a otro usuario."})
+            duplicate = TaskImpact.objects.filter(
+                task_id=self.task_id,
+                plan_id=self.plan_id,
+            )
+            if self.pk:
+                duplicate = duplicate.exclude(pk=self.pk)
+            if duplicate.exists():
+                raise ValidationError({"plan": "La tarea ya tiene un impacto para este plan."})
 
     def __str__(self):
         return f"{self.task} → {self.plan} ({self.impact_percent}%)"
@@ -271,6 +340,18 @@ class Week(models.Model):
         choices=PlanningMode.choices,
         default=PlanningMode.PASSIVE,
     )
+
+    def clean(self):
+        super().clean()
+        if self.user_id and self.week_start:
+            duplicate = Week.objects.filter(
+                user_id=self.user_id,
+                week_start=self.week_start,
+            )
+            if self.pk:
+                duplicate = duplicate.exclude(pk=self.pk)
+            if duplicate.exists():
+                raise ValidationError({"week_start": "Ya existe una semana con esta fecha."})
 
     def __str__(self):
         return str(self.week_start)
