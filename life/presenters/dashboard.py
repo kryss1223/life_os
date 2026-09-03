@@ -102,7 +102,7 @@ def weekly_calendar_visuals(*, allocations, areas, week_start, assigned_hours):
         area_name = area.name if area else "Sin área"
         tone = tones.get(area_id, "tone-neutral")
         hours = allocation.planned_hours or Decimal("0")
-        row = {"allocation": allocation, "task": allocation.task, "hours": hours, "area_name": area_name, "tone": tone}
+        row = {"allocation": allocation, "task": allocation.task, "hours": hours, "area": area, "area_name": area_name, "tone": tone}
         by_date.setdefault(allocation.planned_date, []).append(row)
         key = (area_id, area_name, tone)
         distribution[key] = distribution.get(key, Decimal("0")) + hours
