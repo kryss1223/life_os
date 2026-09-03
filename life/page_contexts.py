@@ -365,6 +365,7 @@ def build_planning_context(request):
         "saved_total_hours": saved_total_hours,
         "saved_available_hours": saved_available_hours,
         "saved_free_hours": saved_free_hours,
+        "saved_free_percent": saved["saved_free_percent"],
         "saved_load_percent": saved_load_percent,
 
         "saved_task_count": saved_task_count,
@@ -385,5 +386,4 @@ def build_planning_context(request):
     }
 
     return context
-
 

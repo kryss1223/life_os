@@ -168,14 +168,20 @@ button.ui-card:active { box-shadow: var(--shadow-sm); transform: translateY(0); 
 
 .ui-progress-ring {
     --progress: 0;
+    --ring-color: var(--area-color, var(--accent));
     width: 64px;
     aspect-ratio: 1;
     display: grid;
     place-items: center;
     border-radius: 50%;
-    background: conic-gradient(var(--accent) calc(var(--progress) * 1%), var(--surface-soft) 0);
+    background: conic-gradient(from -45deg, var(--ring-color) calc(var(--progress) * 1%), color-mix(in srgb, var(--border) 58%, var(--surface-soft)) 0);
+    box-shadow: 0 5px 14px color-mix(in srgb, var(--ring-color) 12%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--border) 40%, transparent);
 }
-.ui-progress-ring::after { width: 48px; aspect-ratio: 1; content: ""; border-radius: inherit; background: var(--surface); }
+.ui-progress-ring::after,
+.ui-progress-ring > span { grid-area: 1 / 1; }
+.ui-progress-ring::after { width: calc(100% - 12px) !important; aspect-ratio: 1; content: ""; border-radius: inherit; background: var(--surface); box-shadow: inset 0 1px 2px rgb(32 33 36 / 5%); }
+.ui-progress-ring > span { position: relative; z-index: 1; color: var(--ring-color); font-size: clamp(10px, 22%, 14px); font-weight: 800; line-height: 1; }
+[data-theme="dark"] .ui-progress-ring { box-shadow: 0 5px 16px color-mix(in srgb, var(--ring-color) 16%, transparent), inset 0 0 0 1px rgb(255 255 255 / 4%); }
 
 .form-container { max-width: 680px; padding: var(--space-4); }
 .form-group { margin-bottom: var(--space-4); }

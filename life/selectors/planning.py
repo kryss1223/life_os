@@ -52,6 +52,7 @@ def saved_week_plan(*, user, week_start):
     allocations = list(
         WeeklyTaskAllocation.objects.filter(week=week, planned_date__isnull=False)
         .select_related("task")
+        .prefetch_related("task__plans__life_area")
         .order_by("planned_date", "task__due_date")
     )
     return week, allocations

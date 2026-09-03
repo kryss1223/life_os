@@ -102,6 +102,8 @@ def saved_week_calendar(*, week, allocations, week_start):
     allocations = list(allocations)
     by_date = defaultdict(list)
     for allocation in allocations:
+        primary_plan = next(iter(allocation.task.plans.all()), None)
+        allocation.area = primary_plan.life_area if primary_plan else None
         by_date[allocation.planned_date].append(allocation)
     total = sum((item.planned_hours or Decimal("0") for item in allocations), Decimal("0"))
     task_count = len({item.task_id for item in allocations})
@@ -131,6 +133,7 @@ def saved_week_calendar(*, week, allocations, week_start):
         "saved_total_hours": total,
         "saved_available_hours": available,
         "saved_free_hours": free,
+        "saved_free_percent": min(Decimal("100"), free / available * 100) if available > 0 else Decimal("0"),
         "saved_load_percent": load,
         "saved_task_count": task_count,
         "saved_days_with_work": days_count,

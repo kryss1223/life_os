@@ -2,7 +2,7 @@
 {% load static l10n %}
 
 {% block title %}Planning | Life_OS{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'life/css/planning.css' %}?v=6">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'life/css/planning.css' %}?v=12">{% endblock %}
 
 {% block content %}
 <div class="planning-page {% if calendar_is_fixed %}is-structured{% endif %}">
@@ -13,8 +13,13 @@
             <p>{% if calendar_is_fixed %}Revisa cada día y ajusta tus bloques cuando lo necesites.{% else %}Elige tus horas disponibles y los días que quieres planificar. Generaremos el mejor plan para ti.{% endif %}</p>
             {% if calendar_is_fixed and can_plan_week %}<button type="button" class="ui-button planning-open-planner" data-open-planner><span aria-hidden="true">✦</span> Planificar semana</button>{% endif %}
         </div>
-        <span class="planning-intro__illustration" aria-hidden="true">🏔️</span>
     </header>
+
+    <nav class="planning-week-selector" aria-label="Seleccionar semana">
+        <a href="{% url 'life:planning' %}?week={{ previous_week_offset }}" aria-label="Semana anterior">‹</a>
+        <div><span>{% if is_current_week %}Esta semana{% else %}Semana {{ week_offset }}{% endif %}</span><strong>{{ week_start|date:"d" }} – {{ week_end|date:"d M, Y" }}</strong></div>
+        <a href="{% url 'life:planning' %}?week={{ next_week_offset }}" aria-label="Semana siguiente">›</a>
+    </nav>
 
     {% if not calendar_is_fixed %}
     <section class="planning-config ui-card" aria-labelledby="planning-config-title">
@@ -36,46 +41,45 @@
     </section>
     {% else %}
     <section class="planning-structured">
-        <nav class="planning-week-selector" aria-label="Seleccionar semana">
-            <a href="{% url 'life:planning' %}?week={{ previous_week_offset }}" aria-label="Semana anterior">‹</a>
-            <div><span>{% if is_current_week %}Esta semana{% else %}Semana {{ week_offset }}{% endif %}</span><strong>{{ week_start|date:"d" }} – {{ week_end|date:"d M, Y" }}</strong></div>
-            <a href="{% url 'life:planning' %}?week={{ next_week_offset }}" aria-label="Semana siguiente">›</a>
-        </nav>
-
         <div class="planning-day-tabs" role="tablist" aria-label="Días de la semana">
             {% for day in saved_schedule %}<button type="button" role="tab" data-day-tab="day-{{ forloop.counter }}" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"><span>{{ day.name|slice:":3" }}</span><strong>{{ day.date|date:"d" }}</strong></button>{% endfor %}
         </div>
 
         {% for day in saved_schedule %}
+        {% widthratio day.used_hours saved_available_hours 100 as day_week_percent %}
         <div class="planning-day-panel" id="day-{{ forloop.counter }}" role="tabpanel" {% if not forloop.first %}hidden{% endif %}>
             <section class="planning-day-summary ui-card">
-                <div class="ui-progress-ring" style="--progress: {% if day.allocations %}100{% else %}0{% endif %}"><span></span></div>
-                <div><span>Resumen del día</span><strong>{{ day.used_hours|floatformat:1 }} h planificadas</strong><small>{{ day.allocations|length }} bloque{{ day.allocations|length|pluralize:"s" }}</small></div>
-                <span class="planning-day-summary__illustration" aria-hidden="true">{% if day.allocations %}🌄{% else %}🌿{% endif %}</span>
+                <div class="ui-progress-ring" style="--progress: {{ day_week_percent }}" role="img" aria-label="{{ day_week_percent }}% de horas del total semanal" title="{{ day.used_hours|floatformat:1 }} h este día de {{ saved_available_hours|floatformat:1 }} h disponibles en la semana"><span>{{ day_week_percent }}%</span></div>
+                <div><span>Resumen del día</span><strong>{{ day.used_hours|floatformat:1 }} h planificadas</strong><small>{{ day.allocations|length }} bloque{{ day.allocations|length|pluralize:"s" }}</small><small>{{ day_week_percent }}% de horas del total semanal ({{ saved_available_hours|floatformat:1 }} h)</small></div>
+                <span class="planning-day-summary__illustration" aria-hidden="true"><img src="{% if day.allocations %}{% static 'life/images/planning-summary-landscape.png' %}{% else %}{% static 'life/images/planning-summary-branch.png' %}{% endif %}?v=2" alt=""></span>
             </section>
 
             <div class="planning-block-list">
                 {% for allocation in day.allocations %}
-                <article class="planning-task-block">
+                <article class="planning-task-block{% if allocation.area %} area-tone--{{ allocation.area.color_key|default:'green' }}{% endif %}">
                     <span class="planning-task-block__rail"></span>
+                    <span class="planning-task-block__icon">{% if allocation.area %}{% include "life/partials/icon.html" with name=allocation.area.icon_key size="sm" %}{% else %}{% include "life/partials/icon.html" with name="circle-check" size="sm" %}{% endif %}</span>
                     <div class="planning-task-block__main">
+                        <small>BLOQUE {{ forloop.counter }}{% if allocation.area %} · {{ allocation.area.name }}{% endif %}</small>
                         <a href="{% url 'life:task_detail' allocation.task.pk %}">{{ allocation.task.name }}</a>
-                        <span>Bloque {{ forloop.counter }} · Sin hora de inicio</span>
-                        <span class="ui-badge ui-badge--completed">✓ Planificada</span>
+                        <span>◷ Sin hora de inicio · {{ allocation.planned_hours|floatformat:1 }} h</span>
                     </div>
-                    <form method="post" action="{% url 'life:allocation_update' allocation.pk %}" class="planning-block-editor">
-                        {% csrf_token %}
-                        <label><span>Duración</span><input name="planned_hours" type="number" min="0.5" step="0.5" value="{{ allocation.planned_hours|unlocalize }}"></label>
-                        <select name="planned_date" aria-label="Mover a otro día">{% for target_day in saved_schedule %}<option value="{{ target_day.date|date:'Y-m-d' }}" {% if target_day.date == allocation.planned_date %}selected{% endif %}>{{ target_day.name }}</option>{% endfor %}</select>
-                        <button type="submit" class="icon-button" aria-label="Guardar cambios">✓</button>
-                    </form>
-                    <form method="post" action="{% url 'life:allocation_remove' allocation.pk %}">{% csrf_token %}<button type="submit" class="planning-remove-block" aria-label="Eliminar bloque">×</button></form>
+                    <span class="ui-badge ui-badge--completed planning-task-block__status">✓ Planificada</span>
+                    <details class="planning-task-block__options"><summary aria-label="Opciones del bloque">•••</summary><div class="planning-task-block__options-panel">
+                        <form method="post" action="{% url 'life:allocation_update' allocation.pk %}" class="planning-block-editor">
+                            {% csrf_token %}
+                            <label><span>Tiempo planificado</span><span class="planning-time-input"><input name="planned_hours" type="number" min="0.5" step="0.5" value="{{ allocation.planned_hours|unlocalize }}"><i>h</i></span></label>
+                            <label><span>Mover al día</span><select name="planned_date">{% for target_day in saved_schedule %}<option value="{{ target_day.date|date:'Y-m-d' }}" {% if target_day.date == allocation.planned_date %}selected{% endif %}>{{ target_day.name }}</option>{% endfor %}</select></label>
+                            <button type="submit" class="ui-button planning-save-block">Guardar cambios</button>
+                        </form>
+                        <form method="post" action="{% url 'life:allocation_remove' allocation.pk %}" class="planning-remove-form">{% csrf_token %}<button type="submit" class="planning-remove-block">× Quitar del planning</button></form>
+                    </div></details>
                 </article>
                 {% empty %}<div class="ui-empty-state"><h3>Día libre</h3><p>Añade un bloque si quieres avanzar alguna tarea.</p></div>{% endfor %}
             </div>
 
             <button type="button" class="planning-add-block" data-date="{{ day.date|date:'Y-m-d' }}" data-day="{{ day.name }}">＋ Añadir bloque de tarea</button>
-            <div class="planning-day-stats ui-card"><span><strong>{{ day.allocations|length }}</strong> bloques</span><span><strong>{{ day.used_hours|floatformat:1 }} h</strong> planificadas</span><span><strong>{% if day.allocations %}100%{% else %}0%{% endif %}</strong> preparado</span></div>
+            <div class="planning-day-stats ui-card"><span><strong>{{ day.allocations|length }}</strong> bloques</span><span><strong>{{ day.used_hours|floatformat:1 }} h</strong> planificadas</span><span title="Horas de este día respecto a las horas disponibles de la semana"><strong>{{ day_week_percent }}%</strong> del total semanal</span></div>
         </div>
         {% endfor %}
     </section>

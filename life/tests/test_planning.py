@@ -36,6 +36,14 @@ class AutomaticPlanningTests(TestCase):
         self.assertEqual(data["week_offset"], 52)
         self.assertEqual(data["week_start"], date(2027, 8, 30))
 
+    def test_weekly_free_percentage_uses_available_hours(self):
+        for available, planned, expected in [(20, 6, 70), (20, 0, 100), (20, 25, 0), (0, 0, 0)]:
+            with self.subTest(available=available, planned=planned):
+                week = Week(available_hours=available)
+                allocation = WeeklyTaskAllocation(task=self.eligible, planned_date=date(2026, 8, 31), planned_hours=planned)
+                result = saved_week_calendar(week=week, allocations=[allocation], week_start=date(2026, 8, 31))
+                self.assertEqual(result["saved_free_percent"], expected)
+
     def test_only_open_dated_tasks_are_eligible(self):
         self.assertQuerySetEqual(eligible_planner_tasks(self.user), [self.eligible])
 
@@ -138,6 +146,24 @@ class AutomaticPlanningTests(TestCase):
         self.assertContains(response, "life/css/planning.css")
         self.assertContains(response, 'class="planning-config ui-card"')
         self.assertContains(response, 'class="planning-day-choices"')
+
+    def test_fixed_planning_renders_daily_share_of_weekly_hours(self):
+        self.client.force_login(self.user)
+        start = planning_week("0")["week_start"]
+        week = Week.objects.create(user=self.user, week_start=start, available_hours=20, planning_mode=Week.PlanningMode.MANUAL)
+        WeeklyTaskAllocation.objects.create(week=week, task=self.eligible, planned_date=start, planned_hours=6)
+        response = self.client.get(reverse("life:planning"))
+        self.assertContains(response, '<span>30%</span>', count=1)
+        self.assertContains(response, '<span>0%</span>', count=6)
+        self.assertContains(response, '% de horas del total semanal')
+        self.assertNotContains(response, '<span>%</span>')
+
+        from django.template.loader import render_to_string
+        context = response.context[0].flatten()
+        context.pop("saved_free_percent", None)
+        html = render_to_string("life/planning.html", context, request=response.wsgi_request)
+        self.assertIn('<span>30%</span>', html)
+        self.assertNotIn('<span>%</span>', html)
 
     def test_calculate_action_returns_proposal_without_saving_week(self):
         self.client.force_login(self.user)

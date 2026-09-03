@@ -114,7 +114,7 @@ def weekly_calendar_visuals(*, allocations, areas, week_start, assigned_hours):
         schedule.append({
             "name": name,
             "date": current_date,
-            "allocations": rows[:3],
+            "allocations": rows,
             "extra_count": max(0, len(rows) - 3),
             "total_hours": sum((row["hours"] for row in rows), Decimal("0")),
         })
