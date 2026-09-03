@@ -39,7 +39,7 @@ class LifeAreaViewTests(TestCase):
         response = self.client.get(
             reverse("life:life_area_detail", kwargs={"pk": self.area.pk})
         )
-        self.assertContains(response, "Balance de vida")
+        self.assertContains(response, "Balance de tus áreas")
         self.assertContains(response, "Trabajo")
         self.assertNotContains(response, "Privada")
 

@@ -192,6 +192,7 @@ def build_dashboard_context(request):
 
         "deadline_rows": deadline_rows,
         "area_rows": area_rows,
+        "areas": areas,
 
         "week_schedule": week_schedule,
 
@@ -384,6 +385,5 @@ def build_planning_context(request):
     }
 
     return context
-
 
 

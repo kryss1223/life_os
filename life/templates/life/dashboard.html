@@ -70,7 +70,7 @@
     <section class="dashboard-planning ui-card" aria-labelledby="planning-preview-title">
         <div class="dashboard-section-heading">
             <h2 id="planning-preview-title"><span class="dashboard-planning__heading-icon">{% include "life/partials/icon.html" with name="calendar-days" %}</span> Vista previa del planning</h2>
-            <a href="{% url 'life:planning' %}">Ver planning <span aria-hidden="true">›</span></a>
+            <a class="ui-text-link" href="{% url 'life:planning' %}">Ver planning <span aria-hidden="true">›</span></a>
         </div>
         <div class="dashboard-planning__list">
             {% for day in week_schedule %}
@@ -94,33 +94,22 @@
         <section class="ui-card dashboard-deadlines" aria-labelledby="deadlines-title">
             <div class="dashboard-section-heading">
                 <h2 id="deadlines-title">Próximas entregas</h2>
-                <a href="{% url 'life:task_list' %}">Ver todas</a>
+                <a class="ui-text-link" href="{% url 'life:task_list' %}">Ver todas <span aria-hidden="true">›</span></a>
             </div>
             <div class="dashboard-list">
                 {% for item in deadline_rows %}
-                <a class="dashboard-list-row" href="{% url 'life:task_detail' item.task.pk %}">
+                <a class="dashboard-list-row{% if item.plan %} area-tone--{{ item.plan.life_area.color_key|default:'green' }}{% endif %}" href="{% url 'life:task_detail' item.task.pk %}">
                     <span class="dashboard-list-row__marker dashboard-list-row__marker--{{ item.tone }}" aria-hidden="true"></span>
-                    <div><strong>{{ item.task.name }}</strong><span>{% if item.plan %}{{ item.plan.name }}{% else %}Sin plan{% endif %}</span></div>
+                    <div><strong>{{ item.task.name }}</strong><span class="dashboard-deadline-tags">{% if item.plan %}<i class="ui-badge area-tone--{{ item.plan.life_area.color_key|default:'green' }}">{{ item.plan.life_area.name }}</i>{% endif %}<i class="ui-badge {% if item.tone == 'urgent' %}ui-badge--urgent{% elif item.tone == 'progress' %}ui-badge--focus{% else %}ui-badge--pending{% endif %}">{{ item.label }}</i></span></div>
                     <time>{{ item.task.due_date|date:"d M" }}</time>
                 </a>
                 {% empty %}<div class="ui-empty-state"><h3>Sin entregas próximas</h3><p>Nada urgente durante los próximos 30 días.</p></div>{% endfor %}
             </div>
         </section>
 
-        <section class="ui-card dashboard-areas" aria-labelledby="areas-title">
-            <div class="dashboard-section-heading">
-                <h2 id="areas-title">Balance de vida</h2>
-                <a href="{% url 'life:life_area_list' %}">Ver áreas</a>
-            </div>
-            <div class="dashboard-list">
-                {% for item in area_rows %}
-                <a class="dashboard-area-row area-tone--{{ item.area.color_key|default:'green' }}" href="{% url 'life:life_area_detail' item.area.pk %}">
-                    <div><strong>{{ item.area.name }}</strong><span>{{ item.area.weekly_hours_target|floatformat:1 }} h deseadas</span></div>
-                    <div class="dashboard-progress-row"><div class="ui-progress-bar"><span style="width:{{ item.area.current_satisfaction }}%"></span></div><strong>{{ item.area.current_satisfaction }}%</strong></div>
-                </a>
-                {% empty %}<div class="ui-empty-state"><h3>Crea tus áreas</h3><p>Te ayudarán a equilibrar tiempo y prioridades.</p></div>{% endfor %}
-            </div>
-        </section>
+        <section class="dashboard-area-balance" aria-labelledby="areas-title"><button class="dashboard-area-balance__button" type="button" data-open-dashboard-balance><span class="dashboard-area-balance__icon">{% include "life/partials/icon.html" with name="heart" size="lg" %}</span><span><small>Tu perspectiva general</small><strong id="areas-title">Balance de tus áreas</strong><i>Descubre cómo conviven todas tus áreas</i></span><b>{% include "life/partials/icon.html" with name="chevron-right" %}</b></button></section>
     </div>
 </div>
+{% include "life/partials/life_balance_modal.html" with balance_areas=areas %}
+<script>(()=>{const m=document.getElementById('life-balance-modal');document.querySelector('[data-open-dashboard-balance]')?.addEventListener('click',()=>m.hidden=false);m?.querySelector('[data-close-balance]')?.addEventListener('click',()=>m.hidden=true);m?.addEventListener('click',e=>{if(e.target===m)m.hidden=true});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&m)m.hidden=true})})();</script>
 {% endblock %}

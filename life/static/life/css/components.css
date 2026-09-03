@@ -155,6 +155,8 @@ button.ui-card:active { box-shadow: var(--shadow-sm); transform: translateY(0); 
 .area-identity--compact .area-identity__icon{width:24px;height:24px;border-radius:7px}
 .area-tone--green .ui-progress-bar>span,.area-tone--green .ui-progress-bar>i,.area-tone--blue .ui-progress-bar>span,.area-tone--blue .ui-progress-bar>i,.area-tone--purple .ui-progress-bar>span,.area-tone--purple .ui-progress-bar>i,.area-tone--orange .ui-progress-bar>span,.area-tone--orange .ui-progress-bar>i,.area-tone--pink .ui-progress-bar>span,.area-tone--pink .ui-progress-bar>i{background:linear-gradient(90deg,color-mix(in srgb,var(--area-color) 78%,#202124),var(--area-color));box-shadow:0 1px 2px color-mix(in srgb,var(--area-color) 24%,transparent)}
 .ui-badge.area-tone--green,.ui-badge.area-tone--blue,.ui-badge.area-tone--purple,.ui-badge.area-tone--orange,.ui-badge.area-tone--pink{background:color-mix(in srgb,var(--area-color) 12%,var(--surface));color:var(--area-color)}
+.ui-text-link{display:inline-flex;align-items:center;gap:5px;color:var(--accent-hover)!important;font-size:var(--font-secondary);font-weight:800;text-decoration:none;transition:gap var(--transition-fast),color var(--transition-fast)}
+.ui-text-link:hover{gap:8px;color:var(--accent-pressed)!important}.ui-text-link:focus-visible{border-radius:4px;outline:0;box-shadow:var(--focus-ring)}
 
 .progress,
 .ui-progress,
