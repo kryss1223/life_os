@@ -153,6 +153,7 @@ button.ui-card:active { box-shadow: var(--shadow-sm); transform: translateY(0); 
 .area-identity__icon{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:color-mix(in srgb,var(--area-color) 13%,var(--surface));color:var(--area-color)}
 .area-identity__name{padding:3px 8px;border-radius:var(--radius-pill);background:color-mix(in srgb,var(--area-color) 12%,var(--surface));color:var(--area-color);font-size:10px;font-weight:800}
 .area-identity--compact .area-identity__icon{width:24px;height:24px;border-radius:7px}
+.area-tone--green .ui-progress-bar>span,.area-tone--green .ui-progress-bar>i,.area-tone--blue .ui-progress-bar>span,.area-tone--blue .ui-progress-bar>i,.area-tone--purple .ui-progress-bar>span,.area-tone--purple .ui-progress-bar>i,.area-tone--orange .ui-progress-bar>span,.area-tone--orange .ui-progress-bar>i,.area-tone--pink .ui-progress-bar>span,.area-tone--pink .ui-progress-bar>i{background:linear-gradient(90deg,color-mix(in srgb,var(--area-color) 78%,#202124),var(--area-color));box-shadow:0 1px 2px color-mix(in srgb,var(--area-color) 24%,transparent)}
 
 .progress,
 .ui-progress,

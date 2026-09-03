@@ -1,7 +1,7 @@
 {% extends "life/base.html" %}
 {% load static l10n life_ui %}
 {% block title %}Áreas | Life_OS{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'life/css/pages/areas.css' %}?v=6">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'life/css/pages/areas.css' %}?v=21">{% endblock %}
 {% block content %}
 <div class="areas-page">
     <header class="areas-intro">
@@ -10,19 +10,20 @@
     </header>
     <div class="areas-card-list">
         {% for area in areas %}
-        <a class="area-list-card ui-card" href="{% url 'life:life_area_detail' area.pk %}">
+        <a class="area-list-card ui-card area-tone--{{ area.color_key|default:'green' }}" href="{% url 'life:life_area_detail' area.pk %}">
             <span class="area-icon area-tone--{{ area.color_key }}">{% include "life/partials/icon.html" with name=area.icon_key size="lg" %}</span>
-            <div>
-                <h2>{{ area.name }}</h2>
-                <span class="importance-row">Importancia {% importance_stars area.importance_weight %}</span>
-                <div class="area-satisfaction"><span>Satisfacción</span><div class="ui-progress-bar"><i style="width:{{ area.current_satisfaction|unlocalize }}%"></i></div><strong>{{ area.current_satisfaction }}%</strong></div>
-            </div>
+            <div class="area-list-card__main"><h2>{{ area.name }}</h2><p>{% if area.description %}{{ area.description|truncatechars:95 }}{% else %}Construye esta parte de tu vida con intención y propósito.{% endif %}</p><span class="importance-row">Importancia {% importance_stars area.importance_weight %}</span></div>
+            <span class="area-list-card__status">● {% if area.current_satisfaction >= 75 %}En equilibrio{% elif area.current_satisfaction >= 50 %}En progreso{% else %}A reforzar{% endif %}</span>
+            <div class="area-satisfaction"><span>Satisfacción actual</span><strong>{{ area.current_satisfaction }}%</strong><div class="ui-progress-bar"><i style="width:{{ area.current_satisfaction|unlocalize }}%"></i></div></div>
+            <div class="area-list-card__landscape" aria-hidden="true"><img src="{% static 'life/images/balance-mountain.png' %}" alt=""></div>
             <b class="area-card-chevron">{% include "life/partials/icon.html" with name="chevron-right" %}</b>
         </a>
         {% empty %}
         <div class="ui-empty-state ui-card"><span>🏔️</span><h3>Aún no tienes áreas</h3><p>Crea tu primera área para empezar a equilibrar tu vida.</p></div>
         {% endfor %}
     </div>
+                <div class="area-list-card__tip"><span>{% include "life/partials/icon.html" with name="star" %}</span><p><strong>{% if area.current_satisfaction < 50 %}Un pequeño paso hoy{% else %}Sigue construyendo{% endif %}</strong><small>{% if area.current_satisfaction < 50 %}Dedica un momento esta semana a recuperar equilibrio.{% else %}Tu constancia está dando forma a esta área.{% endif %}</small></p></div>
+
     <a class="areas-new-button ui-button" href="{% url 'life:life_area_create' %}">{% include "life/partials/icon.html" with name="plus" size="sm" %} Nueva área</a>
 </div>
 {% include "life/partials/life_balance_modal.html" with balance_areas=areas %}

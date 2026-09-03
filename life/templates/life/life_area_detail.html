@@ -1,7 +1,7 @@
 {% extends "life/base.html" %}
 {% load static l10n life_ui %}
 {% block title %}{{ area.name }} | Life_OS{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'life/css/pages/areas.css' %}?v=16">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'life/css/pages/areas.css' %}?v=19">{% endblock %}
 {% block content %}
 <div class="area-detail-page area-tone--{{ area.color_key|default:'green' }}">
     <header class="area-detail-header">
@@ -69,7 +69,7 @@
         <span class="area-open-balance__art" aria-hidden="true">✦</span>
         <b>{% include "life/partials/icon.html" with name="chevron-right" %}</b>
     </button>
-    <div class="area-detail-actions"><a class="ui-button ui-button--secondary" href="{% url 'life:life_area_edit' area.pk %}">{% include "life/partials/icon.html" with name="pencil" size="sm" %} Editar área</a><a class="ui-button ui-button--danger" href="{% url 'life:life_area_delete' area.pk %}">{% include "life/partials/icon.html" with name="trash-2" size="sm" %} Eliminar</a></div>
+    <div class="area-detail-actions"><a class="ui-button ui-button--danger" href="{% url 'life:life_area_delete' area.pk %}">{% include "life/partials/icon.html" with name="trash-2" size="sm" %} Eliminar</a></div>
 </div>
 {% include "life/partials/life_balance_modal.html" with balance_areas=all_areas %}
 <script>(()=>{const m=document.getElementById('life-balance-modal');document.querySelector('[data-open-balance]')?.addEventListener('click',()=>m.hidden=false);document.querySelector('[data-close-balance]')?.addEventListener('click',()=>m.hidden=true);m?.addEventListener('click',e=>{if(e.target===m)m.hidden=true})})();</script>
