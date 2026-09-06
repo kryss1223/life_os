@@ -292,6 +292,8 @@ class TaskImpact(models.Model):
 
 
 class Week(models.Model):
+    include_saturday = models.BooleanField(default=False)
+    include_sunday = models.BooleanField(default=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -469,6 +471,8 @@ class WeeklyTracking(models.Model):
         return f"{self.plan} - {self.week}"
 
 class WeeklyTaskAllocation(models.Model):
+
+    is_locked = models.BooleanField(default=False)
 
     week = models.ForeignKey(
         Week,

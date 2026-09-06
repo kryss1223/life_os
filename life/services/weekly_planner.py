@@ -15,6 +15,14 @@ DAY_NAMES = [
 ]
 
 
+def importance_tiebreak(task):
+    """Desempate estable; no interviene en el cálculo de horas."""
+    return max(
+        (plan.importance_weight + plan.life_area.importance_weight for plan in task.plans.all()),
+        default=0,
+    )
+
+
 def classify_urgency(days_remaining):
     if days_remaining <= 7:
         return "urgent", "Urgente"
@@ -245,8 +253,17 @@ def build_weekly_plan(
     include_sunday=False,
     selected_task_ids=None,
     planning_week_start=None,
+    reserved_allocations=(),
+    today=None,
 ):
-    today = date.today()
+    today = today or date.today()
+    reserved_allocations = list(reserved_allocations)
+    reserved_by_task = {}
+    for allocation in reserved_allocations:
+        reserved_by_task[allocation.task_id] = (
+            reserved_by_task.get(allocation.task_id, Decimal("0"))
+            + allocation.planned_hours
+        )
 
     if planning_week_start is None:
         planning_week_start = (
@@ -288,6 +305,15 @@ def build_weekly_plan(
         load["selected"] = (
             selected_task_ids is None
             or task.pk in selected_task_ids
+            or task.pk in reserved_by_task
+        )
+        load["is_locked"] = any(
+            allocation.is_locked and allocation.task_id == task.pk
+            for allocation in reserved_allocations
+        )
+        load["weekly_hours_needed"] = max(
+            Decimal("0"),
+            load["weekly_hours_needed"] - reserved_by_task.get(task.pk, Decimal("0")),
         )
 
         load["allocated_hours"] = Decimal("0")
@@ -303,6 +329,7 @@ def build_weekly_plan(
     task_loads.sort(
         key=lambda item: (
             item["task"].due_date,
+            -importance_tiebreak(item["task"]),
             item["task"].name.lower(),
         )
     )
@@ -325,9 +352,9 @@ def build_weekly_plan(
         Decimal("0"),
     )
 
-    overloaded = (
-        total_needed > available_hours
-    )
+    reserved_hours = sum(reserved_by_task.values(), Decimal("0"))
+    flexible_hours = max(Decimal("0"), available_hours - reserved_hours)
+    overloaded = total_needed > flexible_hours
 
     # -------------------------
     # 4. FACTOR DE REPARTO
@@ -338,7 +365,7 @@ def build_weekly_plan(
 
     elif overloaded:
         load_factor = (
-            available_hours / total_needed
+            flexible_hours / total_needed
         )
 
     else:
@@ -373,11 +400,11 @@ def build_weekly_plan(
 
     assign_calendar_blocks(
         task_loads,
-        available_hours,
+        flexible_hours,
     )
 
     remaining_capacity = (
-        available_hours - total_needed
+        available_hours - total_needed - reserved_hours
     )
 
     # -------------------------
@@ -390,6 +417,8 @@ def build_weekly_plan(
         include_saturday=include_saturday,
         include_sunday=include_sunday,
         planning_week_start=planning_week_start,
+        today=today,
+        reserved_allocations=reserved_allocations,
     )
 
     return {
@@ -400,6 +429,11 @@ def build_weekly_plan(
         "overloaded": overloaded,
         "load_factor": load_factor,
         "schedule": weekly_schedule,
+        "warnings": [
+            f"{day['name']}: los bloques fijados superan la capacidad del día; se mantienen en su fecha."
+            for day in weekly_schedule
+            if day.get("overloaded")
+        ],
     }
 
 
@@ -410,6 +444,7 @@ def distribute_weekly_schedule(
     include_sunday=False,
     planning_week_start=None,
     today=None,
+    reserved_allocations=(),
 ):
     today = today or date.today()
 
@@ -457,7 +492,7 @@ def distribute_weekly_schedule(
             "tasks": [],
         })
 
-    if not days:
+    if not days and not reserved_allocations:
         return []
 
     available_hours = Decimal(
@@ -473,11 +508,11 @@ def distribute_weekly_schedule(
     )
 
     base_blocks = (
-        total_blocks // len(days)
+        total_blocks // max(1, len(days))
     )
 
     extra_blocks = (
-        total_blocks % len(days)
+        total_blocks % max(1, len(days))
     )
 
     for index, day in enumerate(days):
@@ -491,6 +526,29 @@ def distribute_weekly_schedule(
             Decimal(blocks)
             * BLOCK_SIZE
         )
+
+    # Los bloques fijados se insertan antes del reparto flexible. Esto no altera
+    # la fórmula restaurada: únicamente reserva su espacio y conserva su fecha.
+    for allocation in reserved_allocations:
+        day = next((item for item in days if item["date"] == allocation.planned_date), None)
+        if day is None:
+            day = {
+                "name": DAY_NAMES[allocation.planned_date.weekday()],
+                "date": allocation.planned_date,
+                "capacity": Decimal("0"),
+                "used_hours": Decimal("0"),
+                "tasks": [],
+            }
+            days.append(day)
+        day["tasks"].append({
+            "task": allocation.task,
+            "hours": allocation.planned_hours,
+            "is_locked": allocation.is_locked,
+            "reserved": True,
+        })
+        day["used_hours"] += allocation.planned_hours
+        day["overloaded"] = day["used_hours"] > day["capacity"] and day["date"] >= today
+    days.sort(key=lambda item: item["date"])
 
     # -------------------------
     # DISTRIBUIR TAREAS
@@ -506,18 +564,18 @@ def distribute_weekly_schedule(
         deadline = item["task"].due_date
 
         if deadline < today:
-            eligible_days = days
+            eligible_days = [day for day in days if day["date"] >= today and not any(task.get("reserved") and task["task"].pk == item["task"].pk for task in day["tasks"])]
 
         else:
             eligible_days = [
                 day
                 for day in days
-                if day["date"] <= deadline
+                if today <= day["date"] <= deadline and not any(task.get("reserved") and task["task"].pk == item["task"].pk for task in day["tasks"])
             ]
 
             # Deadline posterior a esta semana.
             if not eligible_days:
-                eligible_days = days
+                eligible_days = [day for day in days if day["date"] >= today and not any(task.get("reserved") and task["task"].pk == item["task"].pk for task in day["tasks"])]
 
         while remaining > 0:
 

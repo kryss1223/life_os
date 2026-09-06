@@ -2,6 +2,7 @@ import calendar
 from collections import defaultdict
 from datetime import date, timedelta
 from decimal import Decimal
+from django.utils import timezone
 
 from ..models import Week
 
@@ -98,12 +99,20 @@ def year_calendar(*, year, tasks):
     return months
 
 
-def saved_week_calendar(*, week, allocations, week_start):
+def saved_week_calendar(*, week, allocations, week_start, today=None):
+    today = today or timezone.localdate()
     allocations = list(allocations)
     by_date = defaultdict(list)
     for allocation in allocations:
         primary_plan = next(iter(allocation.task.plans.all()), None)
         allocation.area = primary_plan.life_area if primary_plan else None
+        allocation.deadline_tone = "normal"
+        if allocation.task.due_date and allocation.task.status not in ("COMPLETED", "CANCELLED"):
+            due_date = allocation.task.due_date
+            if isinstance(due_date, str):
+                due_date = date.fromisoformat(due_date)
+            days_left = (due_date - today).days
+            allocation.deadline_tone = "overdue" if days_left < 0 else "soon" if days_left <= 3 else "normal"
         by_date[allocation.planned_date].append(allocation)
     total = sum((item.planned_hours or Decimal("0") for item in allocations), Decimal("0"))
     task_count = len({item.task_id for item in allocations})
@@ -113,6 +122,11 @@ def saved_week_calendar(*, week, allocations, week_start):
     load = min(Decimal("100"), total / available * 100) if available > 0 else Decimal("0")
     average = total / Decimal(days_count) if days_count else Decimal("0")
     is_fixed = bool(week and week.planning_mode in (Week.PlanningMode.OPTIMIZED, Week.PlanningMode.MANUAL))
+    from ..services.weekly_planner import distribute_weekly_schedule
+    capacities = distribute_weekly_schedule([], available, planning_week_start=week_start, today=today,
+        include_saturday=bool(week and week.include_saturday), include_sunday=bool(week and week.include_sunday),
+        reserved_allocations=[a for a in allocations if a.is_locked])
+    overloaded_dates = {d["date"] for d in capacities if d.get("overloaded")}
     names = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
     schedule = []
     for index, name in enumerate(names):
@@ -125,6 +139,8 @@ def saved_week_calendar(*, week, allocations, week_start):
             "used_hours": sum((item.planned_hours or Decimal("0") for item in day_items), Decimal("0")),
             "has_work": bool(day_items),
             "is_weekend": index >= 5,
+            "is_past": current_date < today,
+            "locked_overload": current_date in overloaded_dates,
         })
     return {
         "fixed_allocations": allocations,

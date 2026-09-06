@@ -327,14 +327,14 @@ class WeeklyPlannerForm(forms.Form):
         ),
     )
 
-    exclude_saturday = forms.BooleanField(
+    include_saturday = forms.BooleanField(
         required=False,
-        initial=True,
-        label="Sábado no disponible",
+        initial=False,
+        label="Incluir sábado",
     )
 
-    exclude_sunday = forms.BooleanField(
+    include_sunday = forms.BooleanField(
         required=False,
-        initial=True,
-        label="Domingo no disponible",
+        initial=False,
+        label="Incluir domingo",
     )

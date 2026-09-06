@@ -4,6 +4,7 @@ from decimal import Decimal, InvalidOperation
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.contrib import messages
 
 from ..selectors.tasks import task_for_user
 from ..services.allocations import (
@@ -36,12 +37,16 @@ def allocation_create(request):
         week_offset = int(request.POST.get("week_offset", 0))
     except (TypeError, ValueError, InvalidOperation):
         return redirect("life:planning")
-    add_allocation(
-        user=request.user,
-        task=task,
-        planned_date=planned_date,
-        planned_hours=planned_hours,
-    )
+    try:
+        add_allocation(
+            user=request.user,
+            task=task,
+            planned_date=planned_date,
+            planned_hours=planned_hours,
+            is_locked=request.POST.get("is_locked") == "on",
+        )
+    except ValueError as error:
+        messages.error(request, str(error))
     return _planning_redirect(week_offset)
 
 
@@ -53,8 +58,8 @@ def allocation_move(request, pk):
     try:
         planned_date = date.fromisoformat(request.POST.get("planned_date"))
         move_allocation(allocation, planned_date=planned_date)
-    except (TypeError, ValueError, AllocationOutsideWeek):
-        pass
+    except (TypeError, ValueError, AllocationOutsideWeek) as error:
+        messages.error(request, str(error) or "No se puede mover a esa fecha.")
     return redirect("life:planning")
 
 
@@ -71,8 +76,10 @@ def allocation_update(request, pk):
             allocation,
             planned_date=planned_date,
             planned_hours=planned_hours,
+            is_locked=request.POST.get("is_locked") == "on" if "lock_present" in request.POST else None,
         )
-    except (TypeError, ValueError, InvalidOperation, AllocationOutsideWeek):
+    except (TypeError, ValueError, InvalidOperation, AllocationOutsideWeek) as error:
+        messages.error(request, str(error) or "No se pudo actualizar el bloque.")
         return redirect("life:planning")
     return _planning_redirect(_offset_for(week_start))
 
@@ -82,5 +89,8 @@ def allocation_remove(request, pk):
     allocation = allocation_for_user(user=request.user, pk=pk)
     week_start = allocation.week.week_start
     if request.method == "POST":
-        remove_allocation(allocation)
+        try:
+            remove_allocation(allocation)
+        except ValueError as error:
+            messages.error(request, str(error))
     return _planning_redirect(_offset_for(week_start))

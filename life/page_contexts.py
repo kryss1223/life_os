@@ -308,13 +308,29 @@ def build_planning_context(request):
 
     calendar_available_tasks = available_calendar_tasks(request.user)
 
+    from .selectors.planning import eligible_planner_tasks
+    from .services.weekly_planner import classify_urgency
+    locked_ids = {a.task_id for a in fixed_allocations if a.is_locked}
+    selectable = {t.pk: t for t in eligible_planner_tasks(request.user)}
+    selectable.update({a.task_id: a.task for a in fixed_allocations if a.is_locked})
+    planner_candidates = []
+    planner_plans = {}
+    for task in selectable.values():
+        plans = list(task.plans.all())
+        planner_plans.update({p.pk: p for p in plans})
+        urgency, label = classify_urgency((task.due_date - max(today, week_start)).days) if task.due_date else ("undated", "Sin fecha")
+        planner_candidates.append({"task": task, "plans": plans, "urgency": urgency, "urgency_label": label, "is_locked": task.pk in locked_ids})
+
 
     # =========================================
     # FORMULARIO DEL PLANNER
     # =========================================
 
     planner_form = WeeklyPlannerForm(
-        request.POST or None
+        request.POST or None,
+        initial={"available_hours": current_week.available_hours if current_week and current_week.available_hours is not None else 20,
+                 "include_saturday": current_week.include_saturday if current_week else False,
+                 "include_sunday": current_week.include_sunday if current_week else False},
     )
 
     planner_result = None
@@ -322,6 +338,7 @@ def build_planning_context(request):
 
     if (
         request.method == "POST"
+        and can_plan_week
         and planner_form.is_valid()
     ):
 
@@ -383,7 +400,8 @@ def build_planning_context(request):
         "can_plan_week": can_plan_week,
 
         "calendar_available_tasks": calendar_available_tasks,
+        "planner_candidates": planner_candidates,
+        "planner_plans": list(planner_plans.values()),
     }
 
     return context
-

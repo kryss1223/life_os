@@ -1,4 +1,5 @@
 from datetime import date
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -48,7 +49,8 @@ class AllocationOwnershipTests(TestCase):
         )
         self.assertEqual(response.status_code, 404)
 
-    def test_create_repeated_allocation_adds_hours_and_marks_week_manual(self):
+    @patch("life.services.allocations.timezone.localdate", return_value=date(2026, 8, 31))
+    def test_create_repeated_allocation_adds_hours_and_marks_week_manual(self, mocked_today):
         self.client.force_login(self.owner)
         response = self.client.post(
             reverse("life:allocation_create"),
@@ -57,12 +59,14 @@ class AllocationOwnershipTests(TestCase):
                 "planned_date": "2026-08-31",
                 "planned_hours": "1.5",
                 "week_offset": 0,
+                "is_locked": "on",
             },
         )
         self.assertEqual(response.status_code, 302)
         self.allocation.refresh_from_db()
         self.allocation.week.refresh_from_db()
         self.assertEqual(self.allocation.planned_hours, 2.5)
+        self.assertTrue(self.allocation.is_locked)
         self.assertEqual(self.allocation.week.planning_mode, Week.PlanningMode.MANUAL)
 
     def test_update_enforces_half_hour_minimum(self):
@@ -82,4 +86,3 @@ class AllocationOwnershipTests(TestCase):
         )
         self.allocation.refresh_from_db()
         self.assertEqual(str(self.allocation.planned_date), "2026-08-31")
-

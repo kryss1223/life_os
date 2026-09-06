@@ -36,6 +36,15 @@ class AutomaticPlanningTests(TestCase):
         self.assertEqual(data["week_offset"], 52)
         self.assertEqual(data["week_start"], date(2027, 8, 30))
 
+    def test_planning_deadline_tones(self):
+        for due, status, expected in [(date(2026, 9, 1), "PENDING", "overdue"), (date(2026, 9, 4), "PENDING", "soon"), (date(2026, 9, 20), "PENDING", "normal"), (None, "PENDING", "normal"), (date(2026, 9, 1), "COMPLETED", "normal")]:
+            with self.subTest(due=due, status=status):
+                self.eligible.due_date = due
+                self.eligible.status = status
+                allocation = WeeklyTaskAllocation(task=self.eligible, planned_date=date(2026, 9, 3), planned_hours=1)
+                saved_week_calendar(week=None, allocations=[allocation], week_start=date(2026, 8, 31), today=date(2026, 9, 3))
+                self.assertEqual(allocation.deadline_tone, expected)
+
     def test_weekly_free_percentage_uses_available_hours(self):
         for available, planned, expected in [(20, 6, 70), (20, 0, 100), (20, 25, 0), (0, 0, 0)]:
             with self.subTest(available=available, planned=planned):
@@ -198,3 +207,22 @@ class AutomaticPlanningTests(TestCase):
         self.assertContains(structured, "data-open-planner")
         self.assertContains(structured, 'id="planner-modal"')
         self.assertContains(structured, "Planificador automático")
+
+    def test_selected_weekend_days_are_included_and_persisted(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("life:planning"),
+            {
+                "available_hours": 14,
+                "action": "save",
+                "week_offset": 0,
+                "selection_present": "1",
+                "selected_tasks": [self.eligible.pk],
+                "include_saturday": "on",
+                "include_sunday": "on",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        week = Week.objects.get(user=self.user)
+        self.assertTrue(week.include_saturday)
+        self.assertTrue(week.include_sunday)
