@@ -10,7 +10,7 @@ def eligible_planner_tasks(user):
         )
         .exclude(status__in=(Task.Status.COMPLETED, Task.Status.CANCELLED))
         .distinct()
-        .prefetch_related("plans__life_area")
+        .prefetch_related("plans__life_area", "impacts__plan__life_area")
         .order_by("due_date", "name")
     )
 

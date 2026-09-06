@@ -15,11 +15,32 @@ DAY_NAMES = [
 ]
 
 
-def importance_tiebreak(task):
-    """Desempate estable; no interviene en el cálculo de horas."""
+def task_importance_tuple(task):
+    """Área, plan e impacto, respetando la relación concreta tarea-plan."""
     return max(
-        (plan.importance_weight + plan.life_area.importance_weight for plan in task.plans.all()),
-        default=0,
+        (
+            (
+                impact.plan.life_area.importance_weight,
+                impact.plan.importance_weight,
+                impact.impact_percent,
+            )
+            for impact in task.impacts.all()
+        ),
+        default=(0, 0, Decimal("0")),
+    )
+
+
+def planner_priority_key(item):
+    """Orden de elección de bloques; no modifica el cálculo proporcional."""
+    area_weight, plan_weight, impact = task_importance_tuple(item["task"])
+    return (
+        -item["risk_level"],
+        item["task"].due_date,
+        -item["hours_needed_this_week"],
+        -area_weight,
+        -plan_weight,
+        -impact,
+        item["task"].name.lower(),
     )
 
 
@@ -31,6 +52,16 @@ def classify_urgency(days_remaining):
         return "upcoming", "Próximo"
 
     return "long_term", "Largo plazo"
+
+
+def calculate_risk_level(days_left):
+    if days_left <= 7:
+        return 3, "CRITICAL"
+    if days_left <= 14:
+        return 2, "AT_RISK"
+    if days_left <= 28:
+        return 1, "NORMAL"
+    return 0, "FLEXIBLE"
 
 
 def calculate_task_weekly_load(task, today=None):
@@ -64,55 +95,39 @@ def calculate_task_weekly_load(task, today=None):
     if remaining_hours <= 0:
         return None
 
-    days_remaining = (
-        task.due_date - today
-    ).days
-
-    # -------------------------
-    # TAREA VENCIDA
-    # -------------------------
-
-    if days_remaining < 0:
-        return {
-            "task": task,
-            "estimated_hours": estimated_hours,
-            "actual_hours": actual_hours,
-            "remaining_hours": remaining_hours,
-            "weeks_remaining": 0,
-            "weekly_hours_needed": remaining_hours,
-            "urgency": "urgent",
-            "urgency_label": "Vencida",
-            "overdue": True,
-        }
-
-    # -------------------------
-    # SEMANAS RESTANTES
-    # -------------------------
-
-    weeks_remaining = max(
-        1,
-        (days_remaining + 6) // 7,
+    raw_days_left = (task.due_date - today).days
+    days_left = max(raw_days_left, 0)
+    weeks_left = max(
+        Decimal(days_left) / Decimal("7"),
+        Decimal("1") / Decimal("7"),
     )
-
-    weekly_hours_needed = (
-        remaining_hours
-        / Decimal(weeks_remaining)
+    hours_needed_this_week = min(
+        remaining_hours,
+        remaining_hours / max(weeks_left, Decimal("1")),
     )
+    risk_level, risk_label = calculate_risk_level(days_left)
 
     urgency, urgency_label = classify_urgency(
-        days_remaining
+        raw_days_left
     )
+    if raw_days_left < 0:
+        urgency_label = "Vencida"
 
     return {
         "task": task,
         "estimated_hours": estimated_hours,
         "actual_hours": actual_hours,
         "remaining_hours": remaining_hours,
-        "weeks_remaining": weeks_remaining,
-        "weekly_hours_needed": weekly_hours_needed,
+        "days_left": days_left,
+        "weeks_left": weeks_left,
+        "weeks_remaining": weeks_left,
+        "hours_needed_this_week": hours_needed_this_week,
+        "weekly_hours_needed": hours_needed_this_week,
+        "risk_level": risk_level,
+        "risk_label": risk_label,
         "urgency": urgency,
         "urgency_label": urgency_label,
-        "overdue": False,
+        "overdue": raw_days_left < 0,
     }
 
 
@@ -203,12 +218,11 @@ def assign_calendar_blocks(
 
     candidates = sorted(
         selected,
-        key=lambda item: (
+        key=lambda item: planner_priority_key(item) + (
             -(
                 item["_raw_blocks"]
                 - Decimal(item["_block_count"])
             ),
-            item["task"].due_date,
         ),
     )
 
@@ -315,6 +329,7 @@ def build_weekly_plan(
             Decimal("0"),
             load["weekly_hours_needed"] - reserved_by_task.get(task.pk, Decimal("0")),
         )
+        load["hours_needed_this_week"] = load["weekly_hours_needed"]
 
         load["allocated_hours"] = Decimal("0")
         load["scheduled_hours"] = Decimal("0")
@@ -327,11 +342,7 @@ def build_weekly_plan(
     # -------------------------
 
     task_loads.sort(
-        key=lambda item: (
-            item["task"].due_date,
-            -importance_tiebreak(item["task"]),
-            item["task"].name.lower(),
-        )
+        key=planner_priority_key
     )
 
     selected_loads = [
@@ -357,23 +368,20 @@ def build_weekly_plan(
     overloaded = total_needed > flexible_hours
 
     # -------------------------
-    # 4. FACTOR DE REPARTO
+    # 4. REFERENCIA DE CARGA
     # -------------------------
 
     if total_needed <= 0:
         load_factor = Decimal("0")
 
-    elif overloaded:
-        load_factor = (
-            flexible_hours / total_needed
-        )
-
     else:
-        load_factor = Decimal("1")
+        load_factor = min(Decimal("1"), flexible_hours / total_needed)
 
     # -------------------------
     # 5. ASIGNACIÓN REAL
     # -------------------------
+
+    capacity_left = flexible_hours
 
     for item in task_loads:
 
@@ -387,12 +395,18 @@ def build_weekly_plan(
             item["capacity_percent"] = Decimal("0")
 
         if item["selected"]:
-            item["allocated_hours"] = (
-                item["weekly_hours_needed"]
-                * load_factor
+            item["allocated_hours"] = min(
+                item["hours_needed_this_week"],
+                capacity_left,
+            )
+            capacity_left -= item["allocated_hours"]
+            item["capacity_deficit_hours"] = max(
+                Decimal("0"),
+                item["hours_needed_this_week"] - item["allocated_hours"],
             )
         else:
             item["allocated_hours"] = Decimal("0")
+            item["capacity_deficit_hours"] = Decimal("0")
 
     # -------------------------
     # 6. BLOQUES DE 0.5H
@@ -403,8 +417,10 @@ def build_weekly_plan(
         flexible_hours,
     )
 
-    remaining_capacity = (
-        available_hours - total_needed - reserved_hours
+    remaining_capacity = capacity_left
+    deficit_hours = sum(
+        (item["capacity_deficit_hours"] for item in selected_loads),
+        Decimal("0"),
     )
 
     # -------------------------
@@ -420,20 +436,26 @@ def build_weekly_plan(
         today=today,
         reserved_allocations=reserved_allocations,
     )
+    warnings = [
+        f"{day['name']}: los bloques fijados superan la capacidad del día; se mantienen en su fecha."
+        for day in weekly_schedule
+        if day.get("overloaded")
+    ]
+    if deficit_hours > 0:
+        warnings.append(
+            f"No caben {deficit_hours:g} h de necesidad semanal con la capacidad disponible."
+        )
 
     return {
         "tasks": task_loads,
         "available_hours": available_hours,
         "total_needed": total_needed,
         "remaining_capacity": remaining_capacity,
+        "deficit_hours": deficit_hours,
         "overloaded": overloaded,
         "load_factor": load_factor,
         "schedule": weekly_schedule,
-        "warnings": [
-            f"{day['name']}: los bloques fijados superan la capacidad del día; se mantienen en su fecha."
-            for day in weekly_schedule
-            if day.get("overloaded")
-        ],
+        "warnings": warnings,
     }
 
 
