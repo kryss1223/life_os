@@ -33,6 +33,9 @@ def task_list(request):
         current_filter=request.GET.get("filter", "all"),
         current_sort=request.GET.get("sort", "recent"),
         search_query=request.GET.get("q", ""),
+        plan_filter=request.GET.get("plan", ""),
+        parent_filter=request.GET.get("parent", ""),
+        current_group=request.GET.get("group", "tasks"),
     )
     return render(request, "life/task_list.html", context)
 

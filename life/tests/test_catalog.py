@@ -152,6 +152,36 @@ class PlanAndTaskViewTests(TestCase):
         self.assertContains(response, self.task.name)
         self.assertNotContains(response, self.other_task.name)
 
+    def test_task_list_hides_subtasks_until_subtasks_filter_is_selected(self):
+        subtask = Task.objects.create(user=self.user, parent=self.task, name="Paso oculto")
+        response = self.client.get(reverse("life:task_list"))
+        self.assertNotContains(response, subtask.name)
+        response = self.client.get(reverse("life:task_list"), {"filter": "subtasks"})
+        self.assertContains(response, subtask.name)
+        self.assertNotIn(self.task, [row["task"] for row in response.context["task_rows"]])
+
+    def test_subtasks_can_be_filtered_by_parent_task(self):
+        first = Task.objects.create(user=self.user, parent=self.task, name="Paso del proyecto")
+        another_parent = Task.objects.create(user=self.user, name="Otra tarea principal")
+        second = Task.objects.create(user=self.user, parent=another_parent, name="Paso de otra tarea")
+        response = self.client.get(
+            reverse("life:task_list"),
+            {"filter": "subtasks", "parent": self.task.pk},
+        )
+        listed = [row["task"] for row in response.context["task_rows"]]
+        self.assertIn(first, listed)
+        self.assertNotIn(second, listed)
+
+    def test_tasks_and_subtasks_can_be_filtered_by_plan(self):
+        subtask = Task.objects.create(user=self.user, parent=self.task, name="Paso heredado")
+        response = self.client.get(reverse("life:task_list"), {"group": "plans", "plan": self.plan.pk})
+        self.assertEqual([row["task"] for row in response.context["task_rows"]], [self.task])
+        response = self.client.get(
+            reverse("life:task_list"),
+            {"filter": "subtasks", "group": "plans", "plan": self.plan.pk},
+        )
+        self.assertIn(subtask, [row["task"] for row in response.context["task_rows"]])
+
     def test_user_cannot_open_another_users_task_detail(self):
         response = self.client.get(
             reverse("life:task_detail", kwargs={"pk": self.other_task.pk})

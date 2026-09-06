@@ -99,19 +99,46 @@ def plan_detail_context(*, user, pk, today=None):
     }
 
 
-def task_list_context(*, user, current_filter="all", current_sort="recent", search_query="", today=None):
+def task_list_context(*, user, current_filter="all", current_sort="recent", search_query="", plan_filter="", parent_filter="", current_group="tasks", today=None):
     today = today or date.today()
-    base = tasks_for_user(user).prefetch_related("plans", "plans__life_area")
+    base = tasks_for_user(user).select_related("parent").prefetch_related("plans", "plans__life_area", "subtasks")
+    primary_base = base.filter(parent__isnull=True)
     counts = {
-        "total_tasks": base.count(),
-        "in_progress_tasks": base.filter(status=Task.Status.IN_PROGRESS).count(),
-        "completed_tasks": base.filter(status=Task.Status.COMPLETED).count(),
-        "pending_tasks": base.filter(status=Task.Status.PENDING).count(),
-        "urgent_tasks": base.exclude(status__in=(Task.Status.COMPLETED, Task.Status.CANCELLED)).filter(
+        "total_tasks": primary_base.count(),
+        "in_progress_tasks": primary_base.filter(status=Task.Status.IN_PROGRESS).count(),
+        "completed_tasks": primary_base.filter(status=Task.Status.COMPLETED).count(),
+        "pending_tasks": primary_base.filter(status=Task.Status.PENDING).count(),
+        "urgent_tasks": primary_base.exclude(status__in=(Task.Status.COMPLETED, Task.Status.CANCELLED)).filter(
             due_date__isnull=False, due_date__lte=today + timedelta(days=3)
         ).count(),
     }
-    tasks = base
+    current_group = current_group if current_group in {"tasks", "plans"} else "tasks"
+    current_filter = current_filter if current_filter in {"all", "today", "week", "completed", "subtasks"} else "all"
+    is_subtasks = current_filter == "subtasks"
+    tasks = base.filter(parent__isnull=False) if is_subtasks else primary_base
+    available_plans = plans_for_user(user).select_related("life_area").order_by("life_area__name", "name")
+    parent_tasks = primary_base.filter(subtasks__isnull=False).distinct().order_by("name")
+
+    try:
+        plan_id = int(plan_filter)
+    except (TypeError, ValueError):
+        plan_id = None
+    if plan_id and available_plans.filter(pk=plan_id).exists():
+        if is_subtasks:
+            tasks = tasks.filter(Q(plans__pk=plan_id) | Q(parent__plans__pk=plan_id))
+        else:
+            tasks = tasks.filter(plans__pk=plan_id)
+    else:
+        plan_id = None
+
+    try:
+        parent_id = int(parent_filter)
+    except (TypeError, ValueError):
+        parent_id = None
+    if is_subtasks and parent_id and parent_tasks.filter(pk=parent_id).exists():
+        tasks = tasks.filter(parent_id=parent_id)
+    else:
+        parent_id = None
     search_query = (search_query or "").strip()
     if search_query:
         tasks = tasks.filter(Q(name__icontains=search_query) | Q(description__icontains=search_query))
@@ -123,13 +150,31 @@ def task_list_context(*, user, current_filter="all", current_sort="recent", sear
         tasks = tasks.filter(status=Task.Status.COMPLETED)
     ordering = {"deadline": ("due_date", "name"), "name": ("name",)}.get(current_sort, ("-created_at",))
     rows = []
-    for task in tasks.order_by(*ordering):
+    for task in tasks.distinct().order_by(*ordering):
+        subtasks = list(task.subtasks.all())
+        plans = list(task.plans.all())
         rows.append({
             "task": task,
             "progress_percent": round(float(_task_progress(task))),
+            "plans": plans,
+            "primary_plan": plans[0] if plans else None,
+            "total_subtasks": len(subtasks),
+            "completed_subtasks": sum(subtask.status == Task.Status.COMPLETED for subtask in subtasks),
             **_task_flags(task, today),
         })
-    return {"task_rows": rows, **counts, "current_filter": current_filter, "current_sort": current_sort, "search_query": search_query}
+    return {
+        "task_rows": rows,
+        **counts,
+        "current_filter": current_filter,
+        "current_sort": current_sort,
+        "search_query": search_query,
+        "available_plans": available_plans,
+        "parent_tasks": parent_tasks,
+        "current_plan_id": plan_id,
+        "current_parent_id": parent_id,
+        "current_group": current_group,
+        "is_subtasks": is_subtasks,
+    }
 
 
 def task_detail_context(*, user, pk, today=None):

@@ -243,6 +243,16 @@ class PlannerConstraintsTests(TestCase):
         self.assertEqual(result['remaining_capacity'], Decimal('3'))
         self.assertEqual(result['deficit_hours'], Decimal('0'))
 
+    def test_fractional_deficit_warning_is_rounded_for_people(self):
+        task = self.make_task('Déficit periódico', self.plan)
+        task.estimated_hours = 10
+        task.due_date = self.today + timedelta(days=10)
+        task.save(update_fields=['estimated_hours', 'due_date'])
+        result = build_weekly_plan([task], Decimal('6'), planning_week_start=self.today, today=self.today)
+        warnings = ' '.join(result['warnings'])
+        self.assertIn('No caben 1 h', warnings)
+        self.assertNotIn('999999', warnings)
+
     def test_past_destination_rejected_for_move_and_update(self):
         self.lock.is_locked = False
         self.lock.save()

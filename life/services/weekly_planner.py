@@ -15,6 +15,11 @@ DAY_NAMES = [
 ]
 
 
+def format_hours(hours):
+    rounded = Decimal(hours).quantize(Decimal("0.1"))
+    return f"{rounded:.1f}".rstrip("0").rstrip(".").replace(".", ",")
+
+
 def task_importance_tuple(task):
     """Área, plan e impacto, respetando la relación concreta tarea-plan."""
     return max(
@@ -443,7 +448,7 @@ def build_weekly_plan(
     ]
     if deficit_hours > 0:
         warnings.append(
-            f"No caben {deficit_hours:g} h de necesidad semanal con la capacidad disponible."
+            f"No caben {format_hours(deficit_hours)} h de necesidad semanal con la capacidad disponible."
         )
 
     return {
