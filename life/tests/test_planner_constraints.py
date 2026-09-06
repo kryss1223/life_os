@@ -215,6 +215,27 @@ class PlannerConstraintsTests(TestCase):
         self.assertEqual(result['remaining_capacity'], Decimal('0'))
         self.assertTrue(any('5 h' in warning for warning in result['warnings']))
 
+    def test_same_risk_and_deadline_uses_importance_before_larger_hour_need(self):
+        low_area = LifeArea.objects.create(user=self.user, name='Deporte', importance_weight=40)
+        low_plan = Plan.objects.create(life_area=low_area, name='Plan Y', importance_weight=40)
+        task_y = self.make_task('Tarea Y', low_plan)
+        task_y.estimated_hours = 8
+        task_y.due_date = self.today + timedelta(days=5)
+        task_y.save(update_fields=['estimated_hours', 'due_date'])
+
+        high_area = LifeArea.objects.create(user=self.user, name='Área X', importance_weight=90)
+        high_plan = Plan.objects.create(life_area=high_area, name='Plan X', importance_weight=40)
+        task_x = self.make_task('Tarea X', high_plan)
+        task_x.estimated_hours = 4
+        task_x.due_date = self.today + timedelta(days=5)
+        task_x.save(update_fields=['estimated_hours', 'due_date'])
+
+        result = build_weekly_plan([task_y, task_x], Decimal('10'), planning_week_start=self.today, today=self.today)
+        loads = {item['task'].pk: item for item in result['tasks']}
+        self.assertEqual(loads[task_x.pk]['allocated_hours'], Decimal('4'))
+        self.assertEqual(loads[task_y.pk]['allocated_hours'], Decimal('6'))
+        self.assertEqual(loads[task_y.pk]['capacity_deficit_hours'], Decimal('2'))
+
     def test_two_phase_allocation_leaves_surplus_capacity_free(self):
         task = self.make_task('Necesidad pequeña', self.plan)
         result = build_weekly_plan([task], Decimal('5'), planning_week_start=self.today, today=self.today)

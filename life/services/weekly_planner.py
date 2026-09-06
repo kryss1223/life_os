@@ -36,10 +36,10 @@ def planner_priority_key(item):
     return (
         -item["risk_level"],
         item["task"].due_date,
-        -item["hours_needed_this_week"],
         -area_weight,
         -plan_weight,
         -impact,
+        -item["hours_needed_this_week"],
         item["task"].name.lower(),
     )
 
