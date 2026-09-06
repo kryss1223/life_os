@@ -10,6 +10,8 @@ class LifeAreaForm(forms.ModelForm):
         fields = [
             "name",
             "description",
+            "icon_key",
+            "color_key",
             "importance_weight",
             "current_satisfaction",
             "desired_satisfaction",
@@ -26,6 +28,8 @@ class LifeAreaForm(forms.ModelForm):
         }
 
         widgets = {
+            "icon_key": forms.HiddenInput(),
+            "color_key": forms.HiddenInput(),
             "name": forms.TextInput(
                 attrs={
                     "placeholder": "Ej: Estudios",
@@ -73,6 +77,17 @@ class LifeAreaForm(forms.ModelForm):
                 }
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["icon_key"].required = False
+        self.fields["color_key"].required = False
+
+    def clean_icon_key(self):
+        return self.cleaned_data.get("icon_key") or LifeArea.Icon.HEART
+
+    def clean_color_key(self):
+        return self.cleaned_data.get("color_key") or LifeArea.Color.GREEN
 
 
 
@@ -245,6 +260,16 @@ class TaskForm(forms.ModelForm):
             ),
         }
 
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user:
+            from .selectors.tasks import tasks_for_user
+
+            queryset = tasks_for_user(user)
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            self.fields["parent"].queryset = queryset
+
 
 class TaskImpactForm(forms.ModelForm):
     class Meta:
@@ -302,14 +327,14 @@ class WeeklyPlannerForm(forms.Form):
         ),
     )
 
-    exclude_saturday = forms.BooleanField(
+    include_saturday = forms.BooleanField(
         required=False,
-        initial=True,
-        label="Sábado no disponible",
+        initial=False,
+        label="Incluir sábado",
     )
 
-    exclude_sunday = forms.BooleanField(
+    include_sunday = forms.BooleanField(
         required=False,
-        initial=True,
-        label="Domingo no disponible",
+        initial=False,
+        label="Incluir domingo",
     )

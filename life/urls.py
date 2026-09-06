@@ -27,8 +27,6 @@ urlpatterns = [
 
     path("stats/", views.statistics, name="statistics"),
 
-    path("planning/", views.planning, name="planning",),
-
     path("areas/<int:pk>/edit/", views.life_area_edit, name="life_area_edit",),
 
     path("areas/<int:pk>/delete/", views.life_area_delete, name="life_area_delete",),
@@ -43,6 +41,12 @@ urlpatterns = [
         "planning/allocation/<int:pk>/update/",
         views.allocation_update,
         name="allocation_update",
+    ),
+
+    path(
+        "planning/allocation/<int:pk>/move/",
+        views.allocation_move,
+        name="allocation_move",
     ),
 
     path(

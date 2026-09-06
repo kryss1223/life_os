@@ -1,0 +1,15 @@
+<a class="app-nav-link {% if current_url == 'dashboard' %}is-active{% endif %}" href="{% url 'life:dashboard' %}">
+    {% include "life/partials/icon.html" with name="home" %}<span>Inicio</span>
+</a>
+<a class="app-nav-link {% if current_url == 'planning' or current_url == 'allocation_create' or current_url == 'allocation_update' or current_url == 'allocation_move' or current_url == 'allocation_remove' %}is-active{% endif %}" href="{% url 'life:planning' %}">
+    {% include "life/partials/icon.html" with name="calendar-days" %}<span>Planning</span>
+</a>
+<a class="app-nav-link {% if current_url == 'task_list' or current_url == 'task_create' or current_url == 'task_edit' or current_url == 'task_detail' or current_url == 'task_delete' %}is-active{% endif %}" href="{% url 'life:task_list' %}">
+    {% include "life/partials/icon.html" with name="clipboard-check" %}<span>Tareas</span>
+</a>
+<a class="app-nav-link {% if current_url == 'plan_list' or current_url == 'plan_create' or current_url == 'plan_edit' or current_url == 'plan_detail' or current_url == 'plan_delete' %}is-active{% endif %}" href="{% url 'life:plan_list' %}">
+    {% include "life/partials/icon.html" with name="flag" %}<span>Planes</span>
+</a>
+<a class="app-nav-link {% if current_url == 'life_area_list' or current_url == 'life_area_create' or current_url == 'life_area_edit' or current_url == 'life_area_detail' or current_url == 'life_area_delete' %}is-active{% endif %}" href="{% url 'life:life_area_list' %}">
+    {% include "life/partials/icon.html" with name="heart" %}<span>Áreas</span>
+</a>
