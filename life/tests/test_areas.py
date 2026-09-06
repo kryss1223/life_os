@@ -32,6 +32,15 @@ class LifeAreaViewTests(TestCase):
         self.assertContains(response, 'id="life-balance-modal"')
         self.assertContains(response, "data-open-balance")
 
+    def test_list_uses_area_colours_and_mobile_creation_button(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("life:life_area_list"))
+
+        self.assertContains(response, "area-tone--green")
+        self.assertContains(response, "area-list-card__tip")
+        self.assertContains(response, "areas-new-desktop")
+        self.assertContains(response, "areas-floating-add")
+
     def test_detail_exposes_balance_modal_with_users_areas(self):
         LifeArea.objects.create(user=self.user, name="Trabajo")
         LifeArea.objects.create(user=self.other_user, name="Privada")

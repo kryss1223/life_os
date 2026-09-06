@@ -86,6 +86,14 @@ class PlanAndTaskViewTests(TestCase):
         self.assertIn(self.plan, listed)
         self.assertNotIn(self.other_plan, listed)
 
+    def test_plan_list_keeps_contextual_progress_and_importance(self):
+        response = self.client.get(reverse("life:plan_list"))
+
+        self.assertContains(response, "area-tone--green")
+        self.assertContains(response, "ui-progress-ring")
+        self.assertContains(response, "plan-card__importance")
+        self.assertContains(response, "plans-floating-add")
+
     def test_plan_detail_renders_roadmap_tracking_modal(self):
         response = self.client.get(
             reverse("life:plan_detail", kwargs={"pk": self.plan.pk})
